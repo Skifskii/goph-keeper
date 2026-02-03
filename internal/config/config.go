@@ -9,7 +9,9 @@ import (
 )
 
 type Config struct {
-	HTTP HTTPConfig
+	HTTP        HTTPConfig
+	DatabaseDSN string `env:"DATABASE_DSN"`
+	MasterKey   string `env:"MASTER_KEY"`
 }
 
 type HTTPConfig struct {

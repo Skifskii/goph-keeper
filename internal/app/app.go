@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 
@@ -23,13 +24,22 @@ func Run() error {
 	)
 
 	// repository
-	_ = postgres.New()
+	repo, err := postgres.New(log, cfg.DatabaseDSN)
+	if err != nil {
+		return fmt.Errorf("failed to initialize repo: %w", err)
+	}
 
 	// services
-	_ = service.New()
+	serv, err := service.New(
+		repo,
+		[]byte(cfg.MasterKey),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to initialize services: %w", err)
+	}
 
 	// transport
-	httpServer := httpserv.New(log, cfg.HTTP.Address)
+	httpServer := httpserv.New(log, cfg.HTTP.Address, serv.Secret)
 
 	return httpServer.Run()
 }

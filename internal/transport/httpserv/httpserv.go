@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/Skifskii/goph-keeper/internal/domain/secret"
 	"github.com/Skifskii/goph-keeper/internal/transport/httpserv/router"
 )
 
@@ -12,12 +13,16 @@ type HTTPServer struct {
 	server *http.Server
 }
 
-func New(log *slog.Logger, addr string) *HTTPServer {
+type SecretCreator interface {
+	Create(payload []byte, secretType secret.SecretType, userID int, metadata string) (id int, err error)
+}
+
+func New(log *slog.Logger, addr string, secretCreator SecretCreator) *HTTPServer {
 	h := HTTPServer{
 		log: log,
 		server: &http.Server{
 			Addr:    addr,
-			Handler: router.New(),
+			Handler: router.New(log, secretCreator),
 		},
 	}
 

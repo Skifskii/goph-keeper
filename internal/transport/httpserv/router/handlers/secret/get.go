@@ -1,4 +1,4 @@
-package secrets
+package secrethttp
 
 import "net/http"
 
