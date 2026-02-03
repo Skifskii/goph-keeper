@@ -13,7 +13,7 @@ type Router struct {
 }
 
 type SecretCreator interface {
-	Create(payload []byte, secretType secret.SecretType, userID int, metadata string) (id int, err error)
+	CreateSecret(payload *secret.Payload, userID int, metadata string) (id int, err error)
 }
 
 func New(log *slog.Logger, secretCreator SecretCreator) *Router {
@@ -24,8 +24,8 @@ func New(log *slog.Logger, secretCreator SecretCreator) *Router {
 
 	// handlers
 	r.Route("/api", func(r chi.Router) {
-		r.Post("/secrets", secrethttp.NewPost(log, secretCreator))
-		r.Get("/secrets", secrethttp.NewGet())
+		r.Post("/secret", secrethttp.NewPost(log, secretCreator))
+		r.Get("/secret{id}", secrethttp.NewGet(log))
 	})
 
 	return &Router{r}

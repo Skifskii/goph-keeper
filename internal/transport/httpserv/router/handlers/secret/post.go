@@ -9,7 +9,7 @@ import (
 )
 
 type SecretCreator interface {
-	Create(payload []byte, secretType secret.SecretType, userID int, metadata string) (id int, err error)
+	CreateSecret(payload *secret.Payload, userID int, metadata string) (id int, err error)
 }
 
 func NewPost(log *slog.Logger, secretCreator SecretCreator) http.HandlerFunc {
@@ -43,20 +43,23 @@ func NewPost(log *slog.Logger, secretCreator SecretCreator) http.HandlerFunc {
 			return
 		}
 
-		// validate type
-		secretType, err := secret.NewSecretTypeFromString(req.Type)
+		// map payload to domain
+		secretType, err := secret.NewSecretTypeFromString(req.SecretType)
 		if err != nil {
 			log.Error("failed to validate secret type", slog.Any("error", err))
 			http.Error(w, "failed to validate secret type", http.StatusBadRequest)
 			return
 		}
-
-		// TODO: validate payload structure and size of payload
+		payload, err := secret.NewPayloadFromJSON(req.Payload, secretType)
+		if err != nil {
+			log.Error("failed to validate secret payload", slog.Any("error", err))
+			http.Error(w, "failed to validate secret payload", http.StatusBadRequest)
+			return
+		}
 
 		// process
-		secretID, err := secretCreator.Create(
-			req.Payload,
-			secretType,
+		secretID, err := secretCreator.CreateSecret(
+			payload,
 			userID,
 			req.Metadata,
 		)
@@ -78,9 +81,9 @@ func NewPost(log *slog.Logger, secretCreator SecretCreator) http.HandlerFunc {
 }
 
 type CreateSecretReq struct {
-	Type     string          `json:"type"`
-	Metadata string          `json:"metadata"`
-	Payload  json.RawMessage `json:"payload"`
+	SecretType string          `json:"secret_type"`
+	Metadata   string          `json:"metadata"`
+	Payload    json.RawMessage `json:"payload"`
 }
 
 type CreateSecretResp struct {

@@ -1,4 +1,4 @@
-package cryptoservice
+package crypto
 
 import (
 	"crypto/aes"
@@ -19,11 +19,11 @@ const (
 	masterKeySize = 32
 )
 
-type CryptoService struct {
+type Crypto struct {
 	aead cipher.AEAD
 }
 
-func New(masterKey []byte) (*CryptoService, error) {
+func New(masterKey []byte) (*Crypto, error) {
 	if len(masterKey) != masterKeySize {
 		return nil, fmt.Errorf("invalid master key length: got %d, expected %d", len(masterKey), masterKeySize)
 	}
@@ -38,10 +38,10 @@ func New(masterKey []byte) (*CryptoService, error) {
 		return nil, fmt.Errorf("failed to create gcm: %w", err)
 	}
 
-	return &CryptoService{aead: aead}, nil
+	return &Crypto{aead: aead}, nil
 }
 
-func (c *CryptoService) Encrypt(payload []byte) ([]byte, error) {
+func (c *Crypto) Encrypt(payload []byte) ([]byte, error) {
 	nonce := make([]byte, nonceSize)
 	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
 		return nil, fmt.Errorf("failed to generate nonce: %w", err)
@@ -61,7 +61,7 @@ func (c *CryptoService) Encrypt(payload []byte) ([]byte, error) {
 	return result, nil
 }
 
-func (c *CryptoService) Decrypt(data []byte) ([]byte, error) {
+func (c *Crypto) Decrypt(data []byte) ([]byte, error) {
 	if len(data) < nonceSize {
 		return nil, ErrCiphertextTooShort
 	}

@@ -9,6 +9,7 @@ import (
 	"github.com/Skifskii/goph-keeper/internal/repository/postgres"
 	"github.com/Skifskii/goph-keeper/internal/service"
 	"github.com/Skifskii/goph-keeper/internal/transport/httpserv"
+	"github.com/Skifskii/goph-keeper/pkg/crypto"
 )
 
 func Run() error {
@@ -29,9 +30,16 @@ func Run() error {
 		return fmt.Errorf("failed to initialize repo: %w", err)
 	}
 
+	// adapters
+	cryp, err := crypto.New([]byte(cfg.MasterKey))
+	if err != nil {
+		return fmt.Errorf("failed to initialize crypto: %w", err)
+	}
+
 	// services
 	serv, err := service.New(
 		repo,
+		cryp,
 		[]byte(cfg.MasterKey),
 	)
 	if err != nil {

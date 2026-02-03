@@ -1,10 +1,10 @@
 package secretservice
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/Skifskii/goph-keeper/internal/domain/secret"
-	cryptoservice "github.com/Skifskii/goph-keeper/internal/service/secret/crypto"
 )
 
 type SecretService struct {
@@ -17,33 +17,40 @@ type Repository interface {
 }
 
 type Encryptor interface {
-	Encrypt(payload []byte) (ciphertext []byte, err error)
-	Decrypt(ciphertext []byte) (payload []byte, err error)
+	Encrypt(plaintext []byte) (ciphertext []byte, err error)
+	Decrypt(ciphertext []byte) (plaintext []byte, err error)
 }
 
-func New(repo Repository, masterKey []byte) (*SecretService, error) {
-	c, err := cryptoservice.New(masterKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize crypto service: %w", err)
-	}
-
+func New(repo Repository, encryptor Encryptor, masterKey []byte) (*SecretService, error) {
 	return &SecretService{
 		repo:      repo,
-		encryptor: c,
+		encryptor: encryptor,
 	}, nil
 }
 
-func (s *SecretService) Create(payload []byte, secretType secret.SecretType, userID int, metadata string) (id int, err error) {
-	encrypted, err := s.encryptor.Encrypt(payload)
+func (s *SecretService) CreateSecret(payload *secret.Payload, userID int, metadata string) (id int, err error) {
+	// create domain secret
+	sec, err := secret.New(payload, userID, metadata)
+	if err != nil {
+		return 0, fmt.Errorf("failed to initialize secret object: %w", err)
+	}
+
+	// encrypt secret payload
+	plaintext, err := json.Marshal(payload)
+	if err != nil {
+		return 0, fmt.Errorf("failed to marshall payload: %w", err)
+	}
+	encrypted, err := s.encryptor.Encrypt(plaintext)
 	if err != nil {
 		return 0, fmt.Errorf("failed to encrypt payload: %w", err)
 	}
 
+	// save encrypted payload to repo
 	secretID, err := s.repo.SaveSecret(
 		encrypted,
-		secretType,
-		userID,
-		metadata,
+		sec.Payload.Type,
+		sec.UserID,
+		sec.Metadata,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("failed to encrypt payload: %w", err)

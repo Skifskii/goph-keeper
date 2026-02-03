@@ -15,8 +15,13 @@ type SecretSaver interface {
 	SaveSecret(payload []byte, secretType secret.SecretType, userID int, metadata string) (secretID int, err error)
 }
 
-func New(secretSaver SecretSaver, masterKey []byte) (*Service, error) {
-	secretService, err := secretservice.New(secretSaver, masterKey)
+type Encryptor interface {
+	Encrypt(payload []byte) (ciphertext []byte, err error)
+	Decrypt(ciphertext []byte) (payload []byte, err error)
+}
+
+func New(secretSaver SecretSaver, encryptor Encryptor, masterKey []byte) (*Service, error) {
+	secretService, err := secretservice.New(secretSaver, encryptor, masterKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize secret service: %w", err)
 	}

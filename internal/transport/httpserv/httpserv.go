@@ -14,7 +14,7 @@ type HTTPServer struct {
 }
 
 type SecretCreator interface {
-	Create(payload []byte, secretType secret.SecretType, userID int, metadata string) (id int, err error)
+	CreateSecret(payload *secret.Payload, userID int, metadata string) (id int, err error)
 }
 
 func New(log *slog.Logger, addr string, secretCreator SecretCreator) *HTTPServer {
