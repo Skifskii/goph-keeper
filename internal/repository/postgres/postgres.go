@@ -7,14 +7,18 @@ import (
 	"log/slog"
 
 	"github.com/Skifskii/goph-keeper/internal/domain/secret"
+	"github.com/Skifskii/goph-keeper/internal/repository"
 	"github.com/golang-migrate/migrate/v4"
 
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-var ErrEmptyDSN = errors.New("DSN is empty")
+var (
+	ErrEmptyDSN = errors.New("DSN is empty")
+)
 
 type Postgres struct {
 	db *sql.DB
@@ -88,4 +92,24 @@ func (p *Postgres) GetSecret(secretID int) (enc secret.EncryptedSecret, err erro
 		return secret.EncryptedSecret{}, fmt.Errorf("failed to scan row: %w", err)
 	}
 	return enc, nil
+}
+
+func (p *Postgres) SaveUser(username, passwordHash string) (userID int, err error) {
+	err = p.db.QueryRow(
+		`INSERT INTO users (username, password_hash)
+		VALUES ($1, $2)
+		RETURNING id`,
+		username, passwordHash,
+	).Scan(&userID)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "23505" {
+				return 0, repository.ErrUsernameTaken
+			}
+		}
+		return 0, fmt.Errorf("failed to run query: %w", err)
+	}
+
+	return userID, nil
 }

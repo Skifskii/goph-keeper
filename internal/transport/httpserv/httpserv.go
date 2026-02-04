@@ -14,6 +14,10 @@ type HTTPServer struct {
 	server *http.Server
 }
 
+type Auther interface {
+	Register(username, password string) (int, error)
+}
+
 type SecretCreator interface {
 	CreateSecret(
 		payload json.RawMessage,
@@ -27,12 +31,17 @@ type SecretGetter interface {
 	GetSecret(secretID, requesterID int) (enc secret.DecryptedSecret, err error)
 }
 
-func New(log *slog.Logger, addr string, secretCreator SecretCreator, secretGetter SecretGetter) *HTTPServer {
+func New(
+	log *slog.Logger, addr string,
+	auther Auther,
+	secretCreator SecretCreator,
+	secretGetter SecretGetter,
+) *HTTPServer {
 	h := HTTPServer{
 		log: log,
 		server: &http.Server{
 			Addr:    addr,
-			Handler: router.New(log, secretCreator, secretGetter),
+			Handler: router.New(log, auther, secretCreator, secretGetter),
 		},
 	}
 

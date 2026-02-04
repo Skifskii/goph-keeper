@@ -39,6 +39,7 @@ func Run() error {
 	// services
 	serv, err := service.New(
 		repo,
+		repo,
 		cryp,
 		[]byte(cfg.MasterKey),
 	)
@@ -47,7 +48,7 @@ func Run() error {
 	}
 
 	// transport
-	httpServer := httpserv.New(log, cfg.HTTP.Address, serv.Secret, serv.Secret)
+	httpServer := httpserv.New(log, cfg.HTTP.Address, serv.Auth, serv.Secret, serv.Secret)
 
 	return httpServer.Run()
 }
