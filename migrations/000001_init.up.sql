@@ -5,22 +5,12 @@ CREATE TABLE users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE secret_types (
-    id SERIAL PRIMARY KEY,
-    type_name VARCHAR(50) UNIQUE NOT NULL
-);
-
-INSERT INTO secret_types (type_name) VALUES
-    ('credential'),
-    ('text'),
-    ('binary'),
-    ('card');
 
 CREATE TABLE secrets (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     encrypted_secret BYTEA NOT NULL,
-    secret_type INTEGER REFERENCES secret_types(id),
+    secret_type VARCHAR(50) Not NULL,
     metadata TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

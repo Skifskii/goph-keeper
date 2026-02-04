@@ -11,8 +11,9 @@ type Service struct {
 	Secret *secretservice.SecretService
 }
 
-type SecretSaver interface {
-	SaveSecret(payload []byte, secretType secret.SecretType, userID int, metadata string) (secretID int, err error)
+type Repository interface {
+	SaveSecret(enc secret.EncryptedSecret) (secretID int, err error)
+	GetSecret(secretID int) (enc secret.EncryptedSecret)
 }
 
 type Encryptor interface {
@@ -20,8 +21,8 @@ type Encryptor interface {
 	Decrypt(ciphertext []byte) (payload []byte, err error)
 }
 
-func New(secretSaver SecretSaver, encryptor Encryptor, masterKey []byte) (*Service, error) {
-	secretService, err := secretservice.New(secretSaver, encryptor, masterKey)
+func New(repo Repository, encryptor Encryptor, masterKey []byte) (*Service, error) {
+	secretService, err := secretservice.New(repo, encryptor, masterKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize secret service: %w", err)
 	}

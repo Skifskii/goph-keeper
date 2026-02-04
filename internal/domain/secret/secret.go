@@ -1,17 +1,36 @@
 package secret
 
-type Secret struct {
-	Payload  *Payload
-	UserID   int
-	Metadata string
+import (
+	"encoding/json"
+	"fmt"
+)
+
+type BaseSecret struct {
+	UserID     int
+	Metadata   string
+	SecretType SecretType
 }
 
-func New(payload *Payload, userID int, metadata string) (Secret, error) {
+type DecryptedSecret struct {
+	BaseSecret
+	DecPayload json.RawMessage
+}
+
+type EncryptedSecret struct {
+	BaseSecret
+	EncPayload []byte
+}
+
+func NewDecryptedSecret(base BaseSecret, payload json.RawMessage) (DecryptedSecret, error) {
+	if err := validatePayload(payload, base.SecretType); err != nil {
+		return DecryptedSecret{}, fmt.Errorf("payload validation error: %w", err)
+	}
+
 	// TODO: validate payload len
-	
-	return Secret{
-		Payload:  payload,
-		UserID:   userID,
-		Metadata: metadata,
+	// TODO: validate metadata len
+
+	return DecryptedSecret{
+		BaseSecret: base,
+		DecPayload: payload,
 	}, nil
 }

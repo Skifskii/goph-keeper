@@ -5,14 +5,6 @@ import (
 	"fmt"
 )
 
-type Payload struct {
-	Type       SecretType
-	Credential *CredentialPayload
-	Card       *CardPayload
-	Text       *TextPayload
-	Binary     *BinaryPayload
-}
-
 type CredentialPayload struct {
 	Login    string
 	Password string
@@ -34,49 +26,37 @@ type CardPayload struct {
 	CVC            string
 }
 
-func NewPayloadFromJSON(jsonPayload json.RawMessage, secretType SecretType) (*Payload, error) {
+func validatePayload(payload json.RawMessage, secretType SecretType) error {
 	switch secretType {
 	case TypeCredential:
 		var p CredentialPayload
-		if err := json.Unmarshal(jsonPayload, &p); err != nil {
-			return nil, fmt.Errorf("failed to unmarshall json (credential): %w", err)
+		if err := json.Unmarshal(payload, &p); err != nil {
+			return fmt.Errorf("failed to unmarshall json (credential): %w", err)
 		}
-		return &Payload{
-			Type:       TypeCredential,
-			Credential: &p,
-		}, nil
+		return nil
 
 	case TypeText:
 		var p TextPayload
-		if err := json.Unmarshal(jsonPayload, &p); err != nil {
-			return nil, fmt.Errorf("failed to unmarshall json (text): %w", err)
+		if err := json.Unmarshal(payload, &p); err != nil {
+			return fmt.Errorf("failed to unmarshall json (text): %w", err)
 		}
-		return &Payload{
-			Type: TypeText,
-			Text: &p,
-		}, nil
+		return nil
 
 	case TypeBinary:
 		var p BinaryPayload
-		if err := json.Unmarshal(jsonPayload, &p); err != nil {
-			return nil, fmt.Errorf("failed to unmarshall json (binary): %w", err)
+		if err := json.Unmarshal(payload, &p); err != nil {
+			return fmt.Errorf("failed to unmarshall json (binary): %w", err)
 		}
-		return &Payload{
-			Type:   TypeBinary,
-			Binary: &p,
-		}, nil
+		return nil
 
 	case TypeCard:
 		var p CardPayload
-		if err := json.Unmarshal(jsonPayload, &p); err != nil {
-			return nil, fmt.Errorf("failed to unmarshall json (card): %w", err)
+		if err := json.Unmarshal(payload, &p); err != nil {
+			return fmt.Errorf("failed to unmarshall json (card): %w", err)
 		}
-		return &Payload{
-			Type: TypeCard,
-			Card: &p,
-		}, nil
+		return nil
 
 	default:
-		return nil, ErrUnknownSecretType
+		return ErrUnknownSecretType
 	}
 }

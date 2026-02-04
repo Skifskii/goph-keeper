@@ -47,7 +47,7 @@ func Run() error {
 	}
 
 	// transport
-	httpServer := httpserv.New(log, cfg.HTTP.Address, serv.Secret)
+	httpServer := httpserv.New(log, cfg.HTTP.Address, serv.Secret, serv.Secret)
 
 	return httpServer.Run()
 }

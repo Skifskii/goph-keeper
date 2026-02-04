@@ -1,6 +1,7 @@
 package httpserv
 
 import (
+	"encoding/json"
 	"log/slog"
 	"net/http"
 
@@ -14,15 +15,24 @@ type HTTPServer struct {
 }
 
 type SecretCreator interface {
-	CreateSecret(payload *secret.Payload, userID int, metadata string) (id int, err error)
+	CreateSecret(
+		payload json.RawMessage,
+		secretType string,
+		metadata string,
+		userID int,
+	) (id int, err error)
 }
 
-func New(log *slog.Logger, addr string, secretCreator SecretCreator) *HTTPServer {
+type SecretGetter interface {
+	GetSecret(secretID, requesterID int) (enc secret.DecryptedSecret, err error)
+}
+
+func New(log *slog.Logger, addr string, secretCreator SecretCreator, secretGetter SecretGetter) *HTTPServer {
 	h := HTTPServer{
 		log: log,
 		server: &http.Server{
 			Addr:    addr,
-			Handler: router.New(log, secretCreator),
+			Handler: router.New(log, secretCreator, secretGetter),
 		},
 	}
 

@@ -4,12 +4,15 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
-
-	"github.com/Skifskii/goph-keeper/internal/domain/secret"
 )
 
 type SecretCreator interface {
-	CreateSecret(payload *secret.Payload, userID int, metadata string) (id int, err error)
+	CreateSecret(
+		payload json.RawMessage,
+		secretType string,
+		metadata string,
+		userID int,
+	) (id int, err error)
 }
 
 func NewPost(log *slog.Logger, secretCreator SecretCreator) http.HandlerFunc {
@@ -43,25 +46,12 @@ func NewPost(log *slog.Logger, secretCreator SecretCreator) http.HandlerFunc {
 			return
 		}
 
-		// map payload to domain
-		secretType, err := secret.NewSecretTypeFromString(req.SecretType)
-		if err != nil {
-			log.Error("failed to validate secret type", slog.Any("error", err))
-			http.Error(w, "failed to validate secret type", http.StatusBadRequest)
-			return
-		}
-		payload, err := secret.NewPayloadFromJSON(req.Payload, secretType)
-		if err != nil {
-			log.Error("failed to validate secret payload", slog.Any("error", err))
-			http.Error(w, "failed to validate secret payload", http.StatusBadRequest)
-			return
-		}
-
 		// process
 		secretID, err := secretCreator.CreateSecret(
-			payload,
-			userID,
+			req.Payload,
+			req.SecretType,
 			req.Metadata,
+			userID,
 		)
 		if err != nil {
 			log.Error("failed to create secret", slog.Any("error", err))
