@@ -70,24 +70,22 @@ func (p *Postgres) SaveSecret(enc secret.EncryptedSecret) (secretID int, err err
 	return secretID, nil
 }
 
-func (p *Postgres) GetSecret(secretID int) (enc secret.EncryptedSecret) {
-	return secret.EncryptedSecret{} // TODO: implement
-	// row := p.db.QueryRow(
-	// 	`SELECT
-	// 		s.encrypted_secret,
-	// 		st.type_name AS secret_type,
-	// 		s.user_id,
-	// 		s.metadata
-	// 	FROM secret s
-	// 	LEFT JOIN secret_types st ON st.id = s.secret_type_id
-	// 	WHERE s.id = $1
-	// 	LIMIT 1;`,
-	// 	secretID,
-	// )
+func (p *Postgres) GetSecret(secretID int) (enc secret.EncryptedSecret, err error) {
+	row := p.db.QueryRow(
+		`SELECT
+			user_id,
+			encrypted_secret,
+			secret_type,
+			metadata
+		FROM secrets
+		WHERE id = $1
+		LIMIT 1;`,
+		secretID,
+	)
 
-	// var secretTypeString string
-	// err = row.Scan(&ciphertext, &secretTypeString, &userID, &metadata)
-	// if err != nil {
-	// 	return
-	// }
+	err = row.Scan(&enc.UserID, &enc.EncPayload, &enc.SecretType, &enc.Metadata)
+	if err != nil {
+		return secret.EncryptedSecret{}, fmt.Errorf("failed to scan row: %w", err)
+	}
+	return enc, nil
 }

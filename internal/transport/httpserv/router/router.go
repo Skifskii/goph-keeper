@@ -35,7 +35,7 @@ func New(log *slog.Logger, secretCreator SecretCreator, secretGetter SecretGette
 	// handlers
 	r.Route("/api", func(r chi.Router) {
 		r.Post("/secret", secrethttp.NewPost(log, secretCreator))
-		r.Get("/secret{id}", secrethttp.NewGet(log, secretGetter))
+		r.Get("/secret/{id}", secrethttp.NewGet(log, secretGetter))
 	})
 
 	return &Router{r}

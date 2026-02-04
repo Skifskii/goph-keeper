@@ -20,7 +20,7 @@ type SecretService struct {
 
 type Repository interface {
 	SaveSecret(enc secret.EncryptedSecret) (secretID int, err error)
-	GetSecret(secretID int) (enc secret.EncryptedSecret)
+	GetSecret(secretID int) (enc secret.EncryptedSecret, err error)
 }
 
 type Encryptor interface {
@@ -85,36 +85,33 @@ func (s *SecretService) encryptSecret(dec secret.DecryptedSecret) (secret.Encryp
 }
 
 func (s *SecretService) GetSecret(secretID, requesterID int) (secret.DecryptedSecret, error) {
-	return secret.DecryptedSecret{}, nil // TODO: implement
-	// 	// get secret from repo
-	// 	ciphertext, secretType, ownerID, metadata, err := s.repo.GetSecret(secretID)
-	// 	if err != nil {
-	// 		return secret.Secret{}, fmt.Errorf("failed to get secret from repo: %w", err)
-	// 	}
+	// get secret from repo
+	encSecret, err := s.repo.GetSecret(secretID)
+	if err != nil {
+		return secret.DecryptedSecret{}, fmt.Errorf("failed to get secret from repo: %w", err)
+	}
 
-	// 	// check if the requester has access to the secret
-	// 	if requesterID != ownerID {
-	// 		return secret.Secret{}, ErrSecretAccessDenied
-	// 	}
+	// check if the requester has access to the secret
+	if requesterID != encSecret.UserID {
+		return secret.DecryptedSecret{}, ErrSecretAccessDenied
+	}
 
-	// 	// decrypt secret payload
-	// 	var payload secret.Payload
-	// 	plaintext, err := s.encryptor.Decrypt(ciphertext)
-	// 	if err != nil {
-	// 		return secret.Secret{}, fmt.Errorf("failed to decrypt secret payload: %w", err)
-	// 	}
-	// 	if err := json.Unmarshal(plaintext, &payload); err != nil {
-	// 		return secret.Secret{}, fmt.Errorf("failed to unmarshall plaintext: %w", err)
-	// 	}
+	// decrypt secret payload
+	decSecret, err := s.decryptSecret(encSecret)
+	if err != nil {
+		return secret.DecryptedSecret{}, fmt.Errorf("failed to decrypt secret payload: %w", err)
+	}
 
-	// 	// validate secret type
-	// 	if secretType != payload.Type {
-	// 		return secret.Secret{}, ErrDifferentTypes
-	// 	}
+	return decSecret, nil
+}
 
-	//	return secret.Secret{
-	//		Payload:  &payload,
-	//		UserID:   ownerID,
-	//		Metadata: metadata,
-	//	}, nil
+func (s *SecretService) decryptSecret(dec secret.EncryptedSecret) (secret.DecryptedSecret, error) {
+	decPayload, err := s.encryptor.Decrypt(dec.EncPayload)
+	if err != nil {
+		return secret.DecryptedSecret{}, fmt.Errorf("failed to decrypt payload: %w", err)
+	}
+	return secret.DecryptedSecret{
+		BaseSecret: dec.BaseSecret,
+		DecPayload: decPayload,
+	}, nil
 }

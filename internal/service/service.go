@@ -13,7 +13,7 @@ type Service struct {
 
 type Repository interface {
 	SaveSecret(enc secret.EncryptedSecret) (secretID int, err error)
-	GetSecret(secretID int) (enc secret.EncryptedSecret)
+	GetSecret(secretID int) (enc secret.EncryptedSecret, err error)
 }
 
 type Encryptor interface {
