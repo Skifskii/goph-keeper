@@ -1,12 +1,11 @@
 package httpserv
 
 import (
-	"encoding/json"
 	"log/slog"
 	"net/http"
 
-	"github.com/Skifskii/goph-keeper/internal/domain/secret"
 	"github.com/Skifskii/goph-keeper/internal/transport/httpserv/router"
+	secrethttp "github.com/Skifskii/goph-keeper/internal/transport/httpserv/router/handlers/secret"
 )
 
 type HTTPServer struct {
@@ -14,28 +13,11 @@ type HTTPServer struct {
 	server *http.Server
 }
 
-type Auther interface {
-	Register(username, password string) (int, error)
-}
-
-type SecretCreator interface {
-	CreateSecret(
-		payload json.RawMessage,
-		secretType string,
-		metadata string,
-		userID int,
-	) (id int, err error)
-}
-
-type SecretGetter interface {
-	GetSecret(secretID, requesterID int) (enc secret.DecryptedSecret, err error)
-}
-
 func New(
 	log *slog.Logger, addr string,
-	auther Auther,
-	secretCreator SecretCreator,
-	secretGetter SecretGetter,
+	auther router.Auther,
+	secretCreator secrethttp.SecretCreator,
+	secretGetter secrethttp.SecretGetter,
 ) *HTTPServer {
 	h := HTTPServer{
 		log: log,

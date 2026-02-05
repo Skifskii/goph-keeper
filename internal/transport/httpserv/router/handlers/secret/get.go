@@ -2,11 +2,13 @@ package secrethttp
 
 import (
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
 
 	"github.com/Skifskii/goph-keeper/internal/domain/secret"
+	"github.com/Skifskii/goph-keeper/internal/repository"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -45,9 +47,13 @@ func NewGet(log *slog.Logger, secretGetter SecretGetter) http.HandlerFunc {
 		// process
 		sec, err := secretGetter.GetSecret(secretID, userID)
 		if err != nil {
-			// TODO: process different errors
+			if errors.Is(err, repository.ErrSecretNotFound) {
+				log.Error("failed to get secret", slog.Any("error", err))
+				http.Error(w, "secret not found", http.StatusNotFound)
+				return
+			}
 			log.Error("failed to get secret", slog.Any("error", err))
-			http.Error(w, "failed to get secret", http.StatusBadRequest)
+			http.Error(w, "failed to get secret", http.StatusInternalServerError)
 			return
 		}
 

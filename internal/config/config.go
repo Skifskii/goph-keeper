@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/caarlos0/env/v6"
 	"github.com/joho/godotenv"
@@ -10,8 +11,10 @@ import (
 
 type Config struct {
 	HTTP        HTTPConfig
-	DatabaseDSN string `env:"DATABASE_DSN"`
-	MasterKey   string `env:"MASTER_KEY"`
+	DatabaseDSN string        `env:"DATABASE_DSN"`
+	MasterKey   string        `env:"MASTER_KEY"`
+	SecretKey   string        `env:"SECRET_KEY"`
+	JWTTokenTTL time.Duration `env:"JWT_TOKEN_TTL"`
 }
 
 type HTTPConfig struct {

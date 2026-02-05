@@ -42,6 +42,8 @@ func Run() error {
 		repo,
 		cryp,
 		[]byte(cfg.MasterKey),
+		cfg.SecretKey,
+		cfg.JWTTokenTTL,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to initialize services: %w", err)

@@ -7,6 +7,7 @@ import (
 	"log/slog"
 
 	"github.com/Skifskii/goph-keeper/internal/domain/secret"
+	"github.com/Skifskii/goph-keeper/internal/domain/user"
 	"github.com/Skifskii/goph-keeper/internal/repository"
 	"github.com/golang-migrate/migrate/v4"
 
@@ -89,6 +90,9 @@ func (p *Postgres) GetSecret(secretID int) (enc secret.EncryptedSecret, err erro
 
 	err = row.Scan(&enc.UserID, &enc.EncPayload, &enc.SecretType, &enc.Metadata)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return secret.EncryptedSecret{}, repository.ErrSecretNotFound
+		}
 		return secret.EncryptedSecret{}, fmt.Errorf("failed to scan row: %w", err)
 	}
 	return enc, nil
@@ -112,4 +116,26 @@ func (p *Postgres) SaveUser(username, passwordHash string) (userID int, err erro
 	}
 
 	return userID, nil
+}
+
+func (p *Postgres) GetUser(username string) (u user.User, err error) {
+	row := p.db.QueryRow(
+		`SELECT
+			id,
+			username,
+			password_hash
+		FROM users
+		WHERE username = $1
+		LIMIT 1;`,
+		username,
+	)
+
+	err = row.Scan(&u.ID, &u.Username, &u.PasswordHash)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return user.User{}, repository.ErrUserNotFound
+		}
+		return user.User{}, fmt.Errorf("failed to scan row: %w", err)
+	}
+	return u, nil
 }
