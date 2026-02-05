@@ -32,7 +32,7 @@ func NewPost(log *slog.Logger, registerer Registerer) http.HandlerFunc {
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&req); err != nil {
 			log.Error("failed to decode json body", slog.Any("error", err))
-			http.Error(w, "failed to decode json body", http.StatusInternalServerError)
+			http.Error(w, "failed to decode json body", http.StatusBadRequest)
 			return
 		}
 
@@ -41,7 +41,7 @@ func NewPost(log *slog.Logger, registerer Registerer) http.HandlerFunc {
 		if err != nil {
 			if errors.Is(err, repository.ErrUsernameTaken) {
 				log.Error("failed to register user", slog.Any("error", err))
-				http.Error(w, "username already taken", http.StatusInternalServerError)
+				http.Error(w, "username already taken", http.StatusConflict)
 				return
 			}
 

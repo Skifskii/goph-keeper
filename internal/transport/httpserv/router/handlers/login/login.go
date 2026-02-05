@@ -32,7 +32,7 @@ func NewPost(log *slog.Logger, loginer Loginer) http.HandlerFunc {
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&req); err != nil {
 			log.Error("failed to decode json body", slog.Any("error", err))
-			http.Error(w, "failed to decode json body", http.StatusInternalServerError)
+			http.Error(w, "failed to decode json body", http.StatusBadRequest)
 			return
 		}
 
@@ -45,7 +45,7 @@ func NewPost(log *slog.Logger, loginer Loginer) http.HandlerFunc {
 				return
 			}
 			log.Error("failed to login", slog.Any("error", err))
-			http.Error(w, "failed to login", http.StatusUnauthorized)
+			http.Error(w, "failed to login", http.StatusInternalServerError)
 			return
 		}
 

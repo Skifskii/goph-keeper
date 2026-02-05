@@ -45,7 +45,7 @@ func NewPost(log *slog.Logger, secretCreator SecretCreator) http.HandlerFunc {
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&req); err != nil {
 			log.Error("failed to decode json body", slog.Any("error", err))
-			http.Error(w, "failed to decode json body", http.StatusInternalServerError)
+			http.Error(w, "failed to decode json body", http.StatusBadRequest)
 			return
 		}
 
