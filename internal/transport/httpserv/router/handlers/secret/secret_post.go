@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+
+	"github.com/Skifskii/goph-keeper/internal/transport/httpserv/router/middleware"
 )
 
 type SecretCreator interface {
@@ -29,13 +31,14 @@ func NewPost(log *slog.Logger, secretCreator SecretCreator) http.HandlerFunc {
 			slog.String("method", r.Method),
 		)
 
-		userID := 1 // TODO: add middleware Auth
-		// userID, ok := r.Context().Value("user_id").(int)
-		// if !ok {
-		// 	log.Error("can't get userID")
-		// 	http.Error(w, "can't get userID", http.StatusInternalServerError)
-		// 	return
-		// }
+		// get userID
+		userID, ok := r.Context().Value(middleware.UserIDKey).(int)
+		if !ok {
+			log.Error("can't get userID")
+			http.Error(w, "can't get userID", http.StatusUnauthorized)
+			return
+		}
+		log = log.With(slog.Int("user_id", userID))
 
 		// read the request
 		var req CreateSecretReq

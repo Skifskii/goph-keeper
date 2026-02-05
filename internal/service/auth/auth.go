@@ -14,6 +14,7 @@ import (
 var (
 	ErrEmptyPassword      = errors.New("password is empty")
 	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrInvalidJWTToken    = errors.New("invalid jwt token")
 )
 
 type AuthService struct {
@@ -25,6 +26,11 @@ type AuthService struct {
 type Repository interface {
 	SaveUser(username, passwordHash string) (int, error)
 	GetUser(username string) (user.User, error)
+}
+
+type Claims struct {
+	jwt.RegisteredClaims
+	UserID int
 }
 
 func New(repo Repository, secretKey string, tokenTTL time.Duration) *AuthService {
@@ -78,7 +84,7 @@ func (a *AuthService) Login(username, password string) (string, error) {
 	}
 
 	// build jwt token
-	token, err := a.buildJWTToken(user.ID, user.Username, a.tokenTTL)
+	token, err := a.buildJWTToken(user.ID, a.tokenTTL)
 	if err != nil {
 		return "", fmt.Errorf("failed to build jwt token: %w", err)
 	}
@@ -86,13 +92,13 @@ func (a *AuthService) Login(username, password string) (string, error) {
 	return token, nil
 }
 
-func (a *AuthService) buildJWTToken(userID int, username string, duration time.Duration) (string, error) {
-	token := jwt.New(jwt.SigningMethodHS256)
-
-	claims := token.Claims.(jwt.MapClaims)
-	claims["uid"] = userID
-	claims["username"] = username
-	claims["exp"] = time.Now().Add(duration).Unix()
+func (a *AuthService) buildJWTToken(userID int, duration time.Duration) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(duration)),
+		},
+		UserID: userID,
+	})
 
 	tokenString, err := token.SignedString([]byte(a.secretKey))
 	if err != nil {
@@ -100,4 +106,24 @@ func (a *AuthService) buildJWTToken(userID int, username string, duration time.D
 	}
 
 	return tokenString, nil
+}
+
+func (a *AuthService) AuthenticateWithJWT(jwtTokenString string) (int, error) {
+	claims := Claims{}
+	token, err := jwt.ParseWithClaims(jwtTokenString, &claims,
+		func(t *jwt.Token) (any, error) {
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+			}
+			return []byte(a.secretKey), nil
+		})
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse jwt token: %w", err)
+	}
+
+	if !token.Valid {
+		return 0, ErrInvalidJWTToken
+	}
+
+	return claims.UserID, nil
 }

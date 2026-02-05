@@ -9,6 +9,7 @@ import (
 
 	"github.com/Skifskii/goph-keeper/internal/domain/secret"
 	"github.com/Skifskii/goph-keeper/internal/repository"
+	"github.com/Skifskii/goph-keeper/internal/transport/httpserv/router/middleware"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -28,7 +29,14 @@ func NewGet(log *slog.Logger, secretGetter SecretGetter) http.HandlerFunc {
 			slog.String("method", r.Method),
 		)
 
-		userID := 1 // TODO: add middleware Auth
+		// get userID
+		userID, ok := r.Context().Value(middleware.UserIDKey).(int)
+		if !ok {
+			log.Error("can't get userID")
+			http.Error(w, "can't get userID", http.StatusUnauthorized)
+			return
+		}
+		log = log.With(slog.Int("user_id", userID))
 
 		// read params
 		secretIDParam := chi.URLParam(r, "id")
