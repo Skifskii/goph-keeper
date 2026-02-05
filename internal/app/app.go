@@ -14,7 +14,10 @@ import (
 
 func Run() error {
 	// config
-	cfg := config.New()
+	cfg, err := config.New()
+	if err != nil {
+		return fmt.Errorf("failed to initialize config: %w", err)
+	}
 
 	// logger
 	log := slog.New(

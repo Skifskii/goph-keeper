@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/caarlos0/env/v6"
@@ -21,7 +20,7 @@ type HTTPConfig struct {
 	Address string `env:"HTTP_ADDRESS"`
 }
 
-func New() *Config {
+func New() (*Config, error) {
 	cfg := Config{}
 
 	// loading env vars from an .env file
@@ -31,8 +30,8 @@ func New() *Config {
 
 	err := env.Parse(&cfg)
 	if err != nil {
-		log.Fatalf("error loading from env vars: %v", err)
+		return nil, fmt.Errorf("error loading from env vars: %v", err)
 	}
 
-	return &cfg
+	return &cfg, nil
 }
