@@ -1,6 +1,8 @@
 package httpserv
 
 import (
+	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 
@@ -30,7 +32,18 @@ func New(
 	return &h
 }
 
+func (h *HTTPServer) MustRun() {
+	err := h.Run()
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		panic(err)
+	}
+}
+
 func (h *HTTPServer) Run() error {
 	h.log.Info("Starting HTTP server", slog.String("address", h.server.Addr))
 	return h.server.ListenAndServe()
+}
+
+func (h *HTTPServer) Stop(ctx context.Context) error {
+	return h.server.Shutdown(ctx)
 }

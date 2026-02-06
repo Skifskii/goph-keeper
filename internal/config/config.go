@@ -9,11 +9,12 @@ import (
 )
 
 type Config struct {
-	HTTP        HTTPConfig
-	DatabaseDSN string        `env:"DATABASE_DSN"`
-	MasterKey   string        `env:"MASTER_KEY"`
-	SecretKey   string        `env:"SECRET_KEY"`
-	JWTTokenTTL time.Duration `env:"JWT_TOKEN_TTL"`
+	HTTP            HTTPConfig
+	DatabaseDSN     string        `env:"DATABASE_DSN"`
+	MasterKey       string        `env:"MASTER_KEY"`
+	SecretKey       string        `env:"SECRET_KEY"`
+	JWTTokenTTL     time.Duration `env:"JWT_TOKEN_TTL"`
+	ShutdownTimeout time.Duration `env:"SHUTDOWN_TIMEOUT"`
 }
 
 type HTTPConfig struct {

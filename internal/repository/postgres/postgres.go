@@ -61,6 +61,10 @@ func runMigrations(log *slog.Logger, dsn string) error {
 	return nil
 }
 
+func (p *Postgres) Stop() error {
+	return p.db.Close()
+}
+
 func (p *Postgres) SaveSecret(enc secret.EncryptedSecret) (secretID int, err error) {
 	err = p.db.QueryRow(
 		`INSERT INTO secrets (user_id, encrypted_secret, secret_type, metadata)
