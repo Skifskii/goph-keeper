@@ -2,7 +2,12 @@ package secret
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+)
+
+var (
+	ErrEmptyValue = errors.New("empty value")
 )
 
 type CredentialPayload struct {
@@ -33,6 +38,11 @@ func validatePayload(payload json.RawMessage, secretType SecretType) error {
 		if err := json.Unmarshal(payload, &p); err != nil {
 			return fmt.Errorf("failed to unmarshall json (credential): %w", err)
 		}
+
+		if p.Login == "" || p.Password == "" {
+			return ErrEmptyValue
+		}
+
 		return nil
 
 	case TypeText:

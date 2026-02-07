@@ -105,7 +105,7 @@ func (s Screen) View() string {
 
 	b.WriteString("\n\n\n")
 
-	b.WriteString(screens.HelpStyle.Render("q back"))
+	b.WriteString(screens.HelpStyle.Render("    Use 'q' to exit"))
 	b.WriteString("\n")
 
 	return b.String()

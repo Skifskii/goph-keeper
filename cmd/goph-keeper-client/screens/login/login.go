@@ -76,6 +76,7 @@ func (l *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 					err := l.api.Login(l.username.Value(), l.password.Value())
 					if err != nil {
 						l.loginErr = err.Error()
+						return l, nil
 					} else {
 						l.Done = true
 					}
@@ -145,7 +146,7 @@ func (l Screen) View() string {
 	b.WriteString(l.buildRow("signup"))
 	b.WriteString("\n\n\n")
 
-	b.WriteString(screens.HelpStyle.Render("    Use ↑, ↓ and Enter to navigate, "))
+	b.WriteString(screens.HelpStyle.Render("    Use '↑', '↓' and 'Enter' to navigate"))
 	b.WriteString("\n")
 
 	return b.String()

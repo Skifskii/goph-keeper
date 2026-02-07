@@ -11,6 +11,7 @@ import (
 	mysecrets_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage/mysecrets"
 	secret_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage/mysecrets/secret"
 	newsecret_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage/newsecret"
+	newcred_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage/newsecret/newcred"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -21,6 +22,8 @@ type model struct {
 	mainPage      *mainpage_screen.Screen
 	mySecrets     *mysecrets_screen.Screen
 	secret        *secret_screen.Screen
+	newSecret     *newsecret_screen.Screen
+	newCred       *newcred_screen.Screen
 }
 
 func initialModel() model {
@@ -33,6 +36,8 @@ func initialModel() model {
 		mainPage:  mainpage_screen.NewScreen(),
 		mySecrets: mysecrets_screen.NewScreen(apiClient),
 		secret:    secret_screen.NewScreen(apiClient),
+		newSecret: newsecret_screen.NewScreen(),
+		newCred:   newcred_screen.NewScreen(apiClient),
 	}
 }
 
@@ -73,7 +78,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, m.mySecrets.Init()
 			case newsecret_screen.Name:
 				// change screen to "new secret"
-				return m, nil // TODO:
+				m.currentScreen = newsecret_screen.Name
+				return m, m.newSecret.Init()
 			}
 		}
 
@@ -94,11 +100,40 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, m.secret.SetSecretID(selectedID)
 		}
 
+	// secret
 	case secret_screen.Name:
 		m.secret, cmd = m.secret.Update(msg)
 
 		if m.secret.Done {
 			// quit
+			m.currentScreen = mysecrets_screen.Name
+			return m, m.mySecrets.Init()
+		}
+
+	// new secret
+	case newsecret_screen.Name:
+		m.newSecret, cmd = m.newSecret.Update(msg)
+
+		if m.newSecret.Done {
+			if m.newSecret.Quit {
+				m.currentScreen = mainpage_screen.Name
+				return m, m.mainPage.Init()
+			}
+
+			switch m.newSecret.NextScreen() {
+			case newcred_screen.Name:
+				// change screen to "new cred"
+				m.currentScreen = newcred_screen.Name
+				return m, m.newCred.Init()
+			}
+		}
+
+	// new cred
+	case newcred_screen.Name:
+		m.newCred, cmd = m.newCred.Update(msg)
+
+		if m.newCred.Done {
+			// change screen to "new cred"
 			m.currentScreen = mysecrets_screen.Name
 			return m, m.mySecrets.Init()
 		}
@@ -117,6 +152,10 @@ func (m model) View() string {
 		return m.mySecrets.View()
 	case secret_screen.Name:
 		return m.secret.View()
+	case newsecret_screen.Name:
+		return m.newSecret.View()
+	case newcred_screen.Name:
+		return m.newCred.View()
 
 	default:
 		return fmt.Sprintf("unknown screen: '%s'", m.currentScreen)

@@ -78,7 +78,7 @@ func (m Screen) View() string {
 	b.WriteString("\n")
 	b.WriteString("\n\n\n")
 
-	b.WriteString(screens.HelpStyle.Render("    Use ↑, ↓ and Enter to navigate, "))
+	b.WriteString(screens.HelpStyle.Render("    Use '↑', '↓' and 'Enter' to navigate"))
 	b.WriteString("\n")
 
 	return b.String()

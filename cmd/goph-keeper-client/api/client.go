@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 )
 
 type APIClient struct {
@@ -167,4 +168,50 @@ func (c *APIClient) GetSecret(secretID int) (Secret, error) {
 	}
 
 	return secret, nil
+}
+
+func (c *APIClient) CreateSecret(secret Secret) (int, error) {
+	data, err := json.Marshal(secret)
+	if err != nil {
+		return 0, fmt.Errorf("failed to marshal secret: %w", err)
+	}
+
+	req, err := http.NewRequest(
+		http.MethodPost,
+		c.BaseURL+"/api/secret",
+		bytes.NewBuffer(data),
+	)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	// передаём JWT в cookie
+	req.AddCookie(&http.Cookie{
+		Name:  "jwt",
+		Value: c.Token,
+	})
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return 0, fmt.Errorf("failed to send POST request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if !slices.Contains([]int{http.StatusOK, http.StatusCreated}, resp.StatusCode) {
+		return 0, fmt.Errorf("create secret failed: %s", resp.Status)
+	}
+
+	// читаем ответ { "ID": 8 }
+	var respBody struct {
+		ID int `json:"ID"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&respBody); err != nil {
+		return 0, fmt.Errorf("failed to decode response body: %w", err)
+	}
+
+	return respBody.ID, nil
 }

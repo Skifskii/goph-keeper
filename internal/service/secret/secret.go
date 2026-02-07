@@ -11,6 +11,7 @@ import (
 var (
 	ErrSecretAccessDenied = errors.New("secret access denied")
 	ErrDifferentTypes     = errors.New("secret type from repo don't match payload type")
+	ErrRequestValidation  = errors.New("validation error")
 )
 
 type SecretService struct {
@@ -56,7 +57,7 @@ func (s *SecretService) CreateSecret(
 		payload,
 	)
 	if err != nil {
-		return 0, fmt.Errorf("failed to initialize decrypted secret object: %w", err)
+		return 0, ErrRequestValidation
 	}
 
 	// encrypt secret

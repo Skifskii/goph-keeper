@@ -2,9 +2,11 @@ package secrethttp
 
 import (
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 
+	secretservice "github.com/Skifskii/goph-keeper/internal/service/secret"
 	"github.com/Skifskii/goph-keeper/internal/transport/httpserv/router/middleware"
 )
 
@@ -40,6 +42,8 @@ func NewPost(log *slog.Logger, secretCreator SecretCreator) http.HandlerFunc {
 		}
 		log = log.With(slog.Int("user_id", userID))
 
+		log.Info("new request")
+
 		// read the request
 		var req CreateSecretReq
 		decoder := json.NewDecoder(r.Body)
@@ -57,6 +61,11 @@ func NewPost(log *slog.Logger, secretCreator SecretCreator) http.HandlerFunc {
 			userID,
 		)
 		if err != nil {
+			if errors.Is(err, secretservice.ErrRequestValidation) {
+				log.Error("validation error", slog.Any("error", err))
+				http.Error(w, "validation error", http.StatusBadRequest)
+				return
+			}
 			log.Error("failed to create secret", slog.Any("error", err))
 			http.Error(w, "failed to create secret", http.StatusInternalServerError)
 			return

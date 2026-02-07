@@ -124,5 +124,5 @@ func (s Screen) View() string {
 		BorderForeground(lipgloss.Color("240")).
 		Render(s.table.View()) +
 		"\n\n" +
-		screens.HelpStyle.Render("  ↑ ↓ navigate   Enter open   q back")
+		screens.HelpStyle.Render("    Use '↑', '↓' and 'Enter' to navigate, 'q' to exit")
 }
