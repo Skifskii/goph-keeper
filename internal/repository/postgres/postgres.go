@@ -207,3 +207,25 @@ func (p *Postgres) UpdateSecret(enc secret.EncryptedSecret) error {
 
 	return nil
 }
+
+func (p *Postgres) DeleteSecret(secretID int) error {
+	res, err := p.db.Exec(
+		`DELETE FROM secrets
+		 WHERE id = $1;`,
+		secretID,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to execute delete query: %w", err)
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get affected rows: %w", err)
+	}
+
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
+}

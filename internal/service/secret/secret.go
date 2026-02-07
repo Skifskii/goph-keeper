@@ -24,6 +24,7 @@ type Repository interface {
 	GetSecret(secretID int) (enc secret.EncryptedSecret, err error)
 	GetUserSecrets(userID, limit, offset int) ([]secret.BaseSecret, error)
 	UpdateSecret(enc secret.EncryptedSecret) error
+	DeleteSecret(secretID int) error
 }
 
 type Encryptor interface {
@@ -170,4 +171,24 @@ func (s *SecretService) UpdateSecret(
 	}
 
 	return secretID, nil
+}
+
+func (s *SecretService) DeleteSecret(secretID, userID int) error {
+	// get secret from repo
+	encSecret, err := s.repo.GetSecret(secretID)
+	if err != nil {
+		return fmt.Errorf("failed to get secret from repo: %w", err)
+	}
+
+	// check access
+	if encSecret.UserID != userID {
+		return ErrSecretAccessDenied
+	}
+
+	// delete
+	if err := s.repo.DeleteSecret(secretID); err != nil {
+		return fmt.Errorf("failed to delete secret: %w", err)
+	}
+
+	return nil
 }
