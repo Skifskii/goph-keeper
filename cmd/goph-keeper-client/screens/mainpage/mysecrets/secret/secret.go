@@ -15,13 +15,14 @@ var Name = "secret"
 
 type Screen struct {
 	apiClient *api.APIClient
-	secretID  int
+	SecretID  int
 
 	secretType string
-	metadata   string
-	payload    json.RawMessage
+	Metadata   string
+	Payload    json.RawMessage
 	err        string
 	Done       bool
+	Edit       bool
 }
 
 func NewScreen(apiClient *api.APIClient) *Screen {
@@ -31,13 +32,14 @@ func NewScreen(apiClient *api.APIClient) *Screen {
 }
 
 func (s *Screen) SetSecretID(secretID int) tea.Cmd {
-	s.secretID = secretID
+	s.SecretID = secretID
 
 	s.secretType = ""
-	s.metadata = ""
-	s.payload = nil
+	s.Metadata = ""
+	s.Payload = nil
 	s.err = ""
 	s.Done = false
+	s.Edit = false
 
 	return s.loadSecret(secretID)
 }
@@ -65,8 +67,8 @@ func (s *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 
 	case secretLoadedMsg:
 		s.secretType = msg.SecretType
-		s.metadata = msg.Metadata
-		s.payload = msg.Payload
+		s.Metadata = msg.Metadata
+		s.Payload = msg.Payload
 
 	case error:
 		s.err = msg.Error()
@@ -74,7 +76,12 @@ func (s *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 
-		case "q", "esc":
+		case "e":
+			s.Edit = true
+			s.Done = true
+			return s, nil
+
+		case "esc":
 			s.Done = true
 		}
 	}
@@ -86,26 +93,26 @@ func (s Screen) View() string {
 	var b strings.Builder
 
 	// title
-	b.WriteString(screens.LabelStyle.Render("    goph-keeper / main page / my secrets / secret"))
+	b.WriteString(screens.LabelStyle.Render(fmt.Sprintf("    goph-keeper / main page / my secrets / secret '%d'", s.SecretID)))
 	b.WriteString("\n\n\n")
 
 	// info
 	b.WriteString(fmt.Sprintf("type: %s", s.secretType))
 	b.WriteString("\n")
-	b.WriteString(fmt.Sprintf("metadata: %s", s.metadata))
+	b.WriteString(fmt.Sprintf("metadata: %s", s.Metadata))
 	b.WriteString("\n\n\n")
 
 	// secret
 	var pretty bytes.Buffer
-	if err := json.Indent(&pretty, s.payload, "", "\t"); err != nil {
-		b.WriteString(string(s.payload))
+	if err := json.Indent(&pretty, s.Payload, "", "\t"); err != nil {
+		b.WriteString(string(s.Payload))
 	} else {
 		b.WriteString(pretty.String())
 	}
 
 	b.WriteString("\n\n\n")
 
-	b.WriteString(screens.HelpStyle.Render("    Use 'q' to exit"))
+	b.WriteString(screens.HelpStyle.Render("    Use 'e' to edit, 'Esc to exit"))
 	b.WriteString("\n")
 
 	return b.String()

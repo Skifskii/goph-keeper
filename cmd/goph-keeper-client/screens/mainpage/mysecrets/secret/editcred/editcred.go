@@ -1,4 +1,4 @@
-package newtext_screen
+package editcred_screen
 
 import (
 	"encoding/json"
@@ -11,13 +11,15 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-var Name = "newtext"
+var Name = "editcred"
 
 type Screen struct {
 	api        *api.APIClient
+	secretID   int
 	options    []string
 	metadata   textinput.Model
-	text       textinput.Model
+	login      textinput.Model
+	password   textinput.Model
 	focusIndex int
 	err        string
 	Done       bool
@@ -29,27 +31,44 @@ func NewScreen(apiClient *api.APIClient) *Screen {
 		api: apiClient,
 		options: []string{
 			"metadata",
-			"text",
+			"login",
+			"password",
 			"submit",
 		},
 	}
 }
 
-func (m *Screen) Init() tea.Cmd {
+func (m *Screen) InitWitParams(secretID int, metadata string, payload json.RawMessage) tea.Cmd {
+	var p CredentialPayload
+	json.Unmarshal(payload, &p)
+
+	m.secretID = secretID
+
 	m.metadata = textinput.New()
 	m.metadata.Placeholder = "__________"
 	m.metadata.Prompt = ""
+	m.metadata.SetValue(metadata)
 	m.metadata.Focus()
 
-	m.text = textinput.New()
-	m.text.Placeholder = "__________"
-	m.text.Prompt = ""
+	m.login = textinput.New()
+	m.login.Placeholder = "__________"
+	m.login.Prompt = ""
+	m.login.SetValue(p.Login)
+
+	m.password = textinput.New()
+	m.password.Placeholder = "__________"
+	m.password.Prompt = ""
+	m.password.SetValue(p.Password)
 
 	m.focusIndex = 0
 	m.err = ""
 	m.Done = false
 	m.Quit = false
 
+	return nil
+}
+
+func (m *Screen) Init() tea.Cmd {
 	return nil
 }
 
@@ -73,9 +92,9 @@ func (m *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 
 		case "enter":
 			// submit
-			if m.focusIndex == 2 {
+			if m.focusIndex == 3 {
 				if !m.Done {
-					err := m.CreateTextSecret(m.text.Value(), m.metadata.Value())
+					err := m.EditCredentialSecret(m.login.Value(), m.password.Value(), m.metadata.Value())
 					if err != nil {
 						m.err = err.Error()
 						return m, nil
@@ -98,13 +117,15 @@ func (m *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 	return m, cmd
 }
 
-type TextPayload struct {
-	Text string `json:"text"`
+type CredentialPayload struct {
+	Login    string `json:"login"`
+	Password string `json:"password"`
 }
 
-func (m *Screen) CreateTextSecret(text, metadata string) error {
-	payload := TextPayload{
-		Text: text,
+func (m *Screen) EditCredentialSecret(login, password, metadata string) error {
+	payload := CredentialPayload{
+		Login:    login,
+		Password: password,
 	}
 
 	jsonPayload, err := json.Marshal(payload)
@@ -113,12 +134,11 @@ func (m *Screen) CreateTextSecret(text, metadata string) error {
 	}
 
 	secret := api.Secret{
-		SecretType: "text",
-		Metadata:   metadata,
-		Payload:    jsonPayload,
+		Metadata: metadata,
+		Payload:  jsonPayload,
 	}
 
-	_, err = m.api.CreateSecret(secret)
+	err = m.api.UpdateSecret(m.secretID, secret)
 	if err != nil {
 		return fmt.Errorf("failed to create secret: %w", err)
 	}
@@ -128,25 +148,30 @@ func (m *Screen) CreateTextSecret(text, metadata string) error {
 
 func (m *Screen) updateFocus() {
 	m.metadata.Blur()
-	m.text.Blur()
+	m.login.Blur()
+	m.password.Blur()
 
 	switch m.focusIndex {
 	case 0:
 		m.metadata.Focus()
 	case 1:
-		m.text.Focus()
+		m.login.Focus()
+	case 2:
+		m.password.Focus()
 	}
 }
 
 func (m *Screen) updateInputs(msg tea.Msg) tea.Cmd {
-	cmds := make([]tea.Cmd, 2)
+	cmds := make([]tea.Cmd, 3)
 
 	// Only update text inputs if they're focused
 	switch m.focusIndex {
 	case 0:
 		m.metadata, cmds[0] = m.metadata.Update(msg)
 	case 1:
-		m.text, cmds[0] = m.text.Update(msg)
+		m.login, cmds[0] = m.login.Update(msg)
+	case 2:
+		m.password, cmds[1] = m.password.Update(msg)
 	}
 
 	return tea.Batch(cmds...)
@@ -156,7 +181,7 @@ func (m Screen) View() string {
 	var b strings.Builder
 
 	// title
-	b.WriteString(screens.LabelStyle.Render("    goph-keeper / main page / new secret / text"))
+	b.WriteString(screens.LabelStyle.Render(fmt.Sprintf("    goph-keeper / main page / my secrets / secret '%d' / edit", m.secretID)))
 	b.WriteString("\n\n\n")
 
 	// metadata
@@ -164,15 +189,18 @@ func (m Screen) View() string {
 	b.WriteString(m.metadata.View())
 	b.WriteString("\n\n\n")
 
-	// text
-	b.WriteString(m.buildRow("text", 1) + ": ")
-	b.WriteString(m.text.View())
+	// credentials
+	b.WriteString(m.buildRow("login", 1) + ": ")
+	b.WriteString(m.login.View())
+	b.WriteString("\n")
+	b.WriteString(m.buildRow("password", 2) + ": ")
+	b.WriteString(m.password.View())
 	b.WriteString("\n")
 	if m.err != "" {
 		b.WriteString(screens.ErrorStyle.Render(m.err))
 		b.WriteString("\n")
 	}
-	b.WriteString(screens.ButtonSubmitStyle.Render(m.buildRow("[ submit ]", 2)))
+	b.WriteString(screens.ButtonSubmitStyle.Render(m.buildRow("[ submit ]", 3)))
 	b.WriteString("\n\n\n")
 
 	b.WriteString(screens.HelpStyle.Render("    Use '↑', '↓' and 'Enter' to navigate, 'Esc' to exit"))

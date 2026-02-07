@@ -10,6 +10,7 @@ import (
 	mainpage_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage"
 	mysecrets_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage/mysecrets"
 	secret_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage/mysecrets/secret"
+	editcred_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage/mysecrets/secret/editcred"
 	newsecret_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage/newsecret"
 	newcred_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage/newsecret/newcred"
 	newtext_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage/newsecret/newtext"
@@ -27,9 +28,12 @@ type model struct {
 	mainPage  *mainpage_screen.Screen
 	mySecrets *mysecrets_screen.Screen
 	secret    *secret_screen.Screen
+
 	newSecret *newsecret_screen.Screen
 	newCred   *newcred_screen.Screen
 	newText   *newtext_screen.Screen
+
+	editCred *editcred_screen.Screen
 }
 
 func initialModel() model {
@@ -47,9 +51,12 @@ func initialModel() model {
 		mainPage:  mainpage_screen.NewScreen(),
 		mySecrets: mysecrets_screen.NewScreen(apiClient),
 		secret:    secret_screen.NewScreen(apiClient),
+
 		newSecret: newsecret_screen.NewScreen(),
 		newCred:   newcred_screen.NewScreen(apiClient),
 		newText:   newtext_screen.NewScreen(apiClient),
+
+		editCred: editcred_screen.NewScreen(apiClient),
 	}
 }
 
@@ -97,6 +104,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// main page
 	case mainpage_screen.Name:
 		m.mainPage, cmd = m.mainPage.Update(msg)
+		if m.mainPage.Quit {
+			// change screen to "login"
+			m.currentScreen = login_screen.Name
+			return m, m.login.Init()
+		}
 
 		if m.mainPage.Done {
 			switch m.mainPage.NextScreen() {
@@ -131,6 +143,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// secret
 	case secret_screen.Name:
 		m.secret, cmd = m.secret.Update(msg)
+
+		if m.secret.Edit {
+			// edit
+			m.currentScreen = editcred_screen.Name
+			return m, m.editCred.InitWitParams(m.secret.SecretID, m.secret.Metadata, m.secret.Payload)
+		}
 
 		if m.secret.Done {
 			// quit
@@ -180,6 +198,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.currentScreen = mysecrets_screen.Name
 			return m, m.mySecrets.Init()
 		}
+
+	// edit cred
+	case editcred_screen.Name:
+		m.editCred, cmd = m.editCred.Update(msg)
+
+		if m.editCred.Done {
+			// change screen to "new cred"
+			m.currentScreen = mysecrets_screen.Name
+			return m, m.mySecrets.Init()
+		}
 	}
 
 	return m, cmd
@@ -191,18 +219,23 @@ func (m model) View() string {
 		return m.login.View()
 	case register_screen.Name:
 		return m.register.View()
+
 	case mainpage_screen.Name:
 		return m.mainPage.View()
 	case mysecrets_screen.Name:
 		return m.mySecrets.View()
 	case secret_screen.Name:
 		return m.secret.View()
+
 	case newsecret_screen.Name:
 		return m.newSecret.View()
 	case newcred_screen.Name:
 		return m.newCred.View()
 	case newtext_screen.Name:
 		return m.newText.View()
+
+	case editcred_screen.Name:
+		return m.editCred.View()
 
 	default:
 		return fmt.Sprintf("unknown screen: '%s'", m.currentScreen)

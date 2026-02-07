@@ -50,6 +50,8 @@ func (l *Screen) Init() tea.Cmd {
 	l.Done = false
 	l.Switch = false
 
+	l.focusIndex = 0
+
 	return nil
 }
 
@@ -145,7 +147,7 @@ func (l Screen) View() string {
 		b.WriteString(screens.ErrorStyle.Render(l.err))
 		b.WriteString("\n")
 	}
-	b.WriteString(l.buildRow("submit"))
+	b.WriteString(screens.ButtonSubmitStyle.Render(l.buildRow("submit")))
 	b.WriteString("\n\n\n")
 
 	// register

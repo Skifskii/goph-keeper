@@ -188,7 +188,7 @@ func (m Screen) View() string {
 		b.WriteString(screens.ErrorStyle.Render(m.err))
 		b.WriteString("\n")
 	}
-	b.WriteString(m.buildRow("[ submit ]", 3))
+	b.WriteString(screens.ButtonSubmitStyle.Render(m.buildRow("[ submit ]", 3)))
 	b.WriteString("\n\n\n")
 
 	b.WriteString(screens.HelpStyle.Render("    Use '↑', '↓' and 'Enter' to navigate, 'Esc' to exit"))

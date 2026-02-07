@@ -16,6 +16,7 @@ type Screen struct {
 	options    []string
 	focusIndex int
 	Done       bool
+	Quit       bool
 }
 
 func NewScreen() *Screen {
@@ -56,6 +57,10 @@ func (m *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 		case "enter":
 			m.Done = true
 			return m, nil
+
+		case "esc":
+			m.Quit = true
+			return m, nil
 		}
 	}
 
@@ -78,7 +83,7 @@ func (m Screen) View() string {
 	b.WriteString("\n")
 	b.WriteString("\n\n\n")
 
-	b.WriteString(screens.HelpStyle.Render("    Use '↑', '↓' and 'Enter' to navigate"))
+	b.WriteString(screens.HelpStyle.Render("    Use '↑', '↓' and 'Enter' to navigate, 'Esc' to Sign Out"))
 	b.WriteString("\n")
 
 	return b.String()

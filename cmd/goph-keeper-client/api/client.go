@@ -215,3 +215,40 @@ func (c *APIClient) CreateSecret(secret Secret) (int, error) {
 
 	return respBody.ID, nil
 }
+
+func (c *APIClient) UpdateSecret(secretID int, secret Secret) error {
+	data, err := json.Marshal(secret)
+	if err != nil {
+		return fmt.Errorf("failed to marshal secret: %w", err)
+	}
+
+	req, err := http.NewRequest(
+		http.MethodPut,
+		fmt.Sprintf("%s/api/secret/%d", c.BaseURL, secretID),
+		bytes.NewBuffer(data),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	// передаём JWT в cookie
+	req.AddCookie(&http.Cookie{
+		Name:  "jwt",
+		Value: c.Token,
+	})
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send PUT request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("update secret failed: %s", resp.Status)
+	}
+
+	return nil
+}
