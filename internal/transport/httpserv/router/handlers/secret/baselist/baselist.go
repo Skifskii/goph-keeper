@@ -35,6 +35,8 @@ func NewGet(log *slog.Logger, lister BaseSecretsLister) http.HandlerFunc {
 		}
 		log = log.With(slog.Int("user_id", userID))
 
+		log.Info("new request")
+
 		// parse query params
 		q := r.URL.Query()
 
