@@ -10,6 +10,8 @@ import (
 	"github.com/Skifskii/goph-keeper/internal/transport/httpserv/router/middleware"
 )
 
+// SecretCreator defines the minimal service contract required by the
+// POST /secret handler: creating a validated secret and returning its ID.
 type SecretCreator interface {
 	CreateSecret(
 		payload json.RawMessage,
@@ -19,6 +21,8 @@ type SecretCreator interface {
 	) (id int, err error)
 }
 
+// NewPost returns an HTTP handler for POST /secret which accepts a
+// secret creation request, validates and persists it via SecretCreator.
 func NewPost(log *slog.Logger, secretCreator SecretCreator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
@@ -82,12 +86,15 @@ func NewPost(log *slog.Logger, secretCreator SecretCreator) http.HandlerFunc {
 	}
 }
 
+// CreateSecretReq is the JSON request body for creating a new secret.
 type CreateSecretReq struct {
 	SecretType string          `json:"secret_type"`
 	Metadata   string          `json:"metadata"`
 	Payload    json.RawMessage `json:"payload"`
 }
 
+// CreateSecretResp is returned after successful secret creation and
+// contains the newly assigned secret ID.
 type CreateSecretResp struct {
 	ID int
 }

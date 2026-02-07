@@ -10,10 +10,14 @@ import (
 	"github.com/Skifskii/goph-keeper/internal/transport/httpserv/router/middleware"
 )
 
+// BaseSecretsLister defines the contract for listing non-sensitive
+// secret metadata for a user with pagination support.
 type BaseSecretsLister interface {
 	GetBaseSecretsList(userID, limit, offset int) ([]secret.BaseSecret, error)
 }
 
+// NewGet returns an HTTP handler for GET /secret/baselist that returns a
+// paginated list of base secret metadata for the authenticated user.
 func NewGet(log *slog.Logger, lister BaseSecretsLister) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
@@ -82,6 +86,8 @@ func NewGet(log *slog.Logger, lister BaseSecretsLister) http.HandlerFunc {
 	}
 }
 
+// BaseSecretResponse is the JSON representation of the non-sensitive
+// secret metadata returned in a listing response.
 type BaseSecretResponse struct {
 	ID         int    `json:"id"`
 	SecretType string `json:"secret_type"`

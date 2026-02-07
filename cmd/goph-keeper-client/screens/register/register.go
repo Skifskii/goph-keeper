@@ -10,8 +10,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// Name is the canonical identifier for the register screen.
 var Name = "register"
 
+// Screen implements the TUI state and behavior for the register view.
 type Screen struct {
 	api        *api.APIClient
 	options    []string
@@ -23,6 +25,7 @@ type Screen struct {
 	Switch     bool
 }
 
+// NewScreen constructs a register Screen wired with an API client.
 func NewScreen(apiClient *api.APIClient) *Screen {
 	return &Screen{
 		api: apiClient,
@@ -35,6 +38,7 @@ func NewScreen(apiClient *api.APIClient) *Screen {
 	}
 }
 
+// Init initializes input models and internal state for the register Screen.
 func (l *Screen) Init() tea.Cmd {
 	l.username = textinput.New()
 	l.username.Placeholder = "__________"
@@ -55,6 +59,8 @@ func (l *Screen) Init() tea.Cmd {
 	return nil
 }
 
+// Update processes incoming messages and updates the register Screen
+// state. It returns the possibly modified screen and any command to run.
 func (l *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 	switch msg := msg.(type) {
 
@@ -127,6 +133,7 @@ func (l *Screen) updateInputs(msg tea.Msg) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
+// View renders the register Screen as a string for display by the TUI.
 func (l Screen) View() string {
 	var b strings.Builder
 

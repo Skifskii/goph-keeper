@@ -9,10 +9,14 @@ import (
 	authservice "github.com/Skifskii/goph-keeper/internal/service/auth"
 )
 
+// Loginer defines the subset of the auth service required by the
+// login HTTP handler: authenticating credentials and returning a JWT.
 type Loginer interface {
 	Login(username, password string) (string, error)
 }
 
+// NewPost returns an HTTP handler for POST /login that validates user
+// credentials via the provided Loginer and sets a JWT cookie on success.
 func NewPost(log *slog.Logger, loginer Loginer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
@@ -58,6 +62,7 @@ func NewPost(log *slog.Logger, loginer Loginer) http.HandlerFunc {
 	}
 }
 
+// LoginReq represents the JSON payload expected by the login endpoint.
 type LoginReq struct {
 	Username string `json:"username"`
 	Password string `json:"password"`

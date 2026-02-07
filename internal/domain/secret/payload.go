@@ -6,23 +6,26 @@ import (
 	"fmt"
 )
 
-var (
-	ErrEmptyValue = errors.New("empty value")
-)
+// ErrEmptyValue is returned when a required payload field is empty.
+var ErrEmptyValue = errors.New("empty value")
 
+// CredentialPayload represents a username/password pair stored as a secret.
 type CredentialPayload struct {
 	Login    string
 	Password string
 }
 
+// TextPayload represents a plain text secret.
 type TextPayload struct {
 	Text string
 }
 
+// BinaryPayload holds arbitrary binary data for a secret.
 type BinaryPayload struct {
 	Data []byte
 }
 
+// CardPayload stores payment card related fields as a secret payload.
 type CardPayload struct {
 	CardNumber     string
 	CardholderName string

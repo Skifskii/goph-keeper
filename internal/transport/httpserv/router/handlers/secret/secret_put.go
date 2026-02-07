@@ -11,6 +11,8 @@ import (
 	"github.com/Skifskii/goph-keeper/internal/transport/httpserv/router/middleware"
 )
 
+// SecretUpdater defines the contract required by the PUT /secret/{id}
+// handler to update an existing secret's payload and metadata.
 type SecretUpdater interface {
 	UpdateSecret(
 		payload json.RawMessage,
@@ -19,6 +21,8 @@ type SecretUpdater interface {
 	) (id int, err error)
 }
 
+// NewPut returns an HTTP handler for PUT /secret/{id} which validates
+// ownership and applies an update via SecretUpdater.
 func NewPut(log *slog.Logger, secretUpdater SecretUpdater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
@@ -104,11 +108,14 @@ func getSecretIDFromRequest(r *http.Request) (int, error) {
 	return strconv.Atoi(idStr)
 }
 
+// UpdateSecretReq is the JSON payload expected by the update endpoint.
 type UpdateSecretReq struct {
 	Metadata string          `json:"metadata"`
 	Payload  json.RawMessage `json:"payload"`
 }
 
+// UpdateSecretResp is returned after a successful update and contains
+// the id of the updated secret.
 type UpdateSecretResp struct {
 	ID int `json:"id"`
 }

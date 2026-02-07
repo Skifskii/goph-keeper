@@ -8,15 +8,82 @@ import (
 	"slices"
 )
 
+// APIClient is a lightweight HTTP client used by the CLI/UI to call the
+// server API. It stores the base URL and a JWT token for authenticated
+// requests.
 type APIClient struct {
 	BaseURL string
 	Token   string
 }
 
+// RegisterReq is the JSON payload used to create a new user account.
+type RegisterReq struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type LoginReq struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+// SecretMeta contains minimal metadata about a secret as returned
+// by the listing endpoint.
+type SecretMeta struct {
+	ID         int    `json:"id"`
+	SecretType string `json:"secret_type"`
+	Metadata   string `json:"metadata"`
+}
+
+// ListSecrets retrieves a paginated list of secret metadata for the
+// authenticated user.
+func (c *APIClient) ListSecrets(limit, offset int) ([]SecretMeta, error) {
+	req, err := http.NewRequest(
+		http.MethodGet,
+		fmt.Sprintf("%s/api/secret/baselist/?limit=%d&offset=%d", c.BaseURL, limit, offset),
+		nil,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.AddCookie(&http.Cookie{
+		Name:  "jwt",
+		Value: c.Token,
+	})
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("list secrets failed: %s", resp.Status)
+	}
+
+	var secrets []SecretMeta
+	if err := json.NewDecoder(resp.Body).Decode(&secrets); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return secrets, nil
+}
+
+type Secret struct {
+	SecretType string          `json:"secret_type"`
+	Metadata   string          `json:"metadata"`
+	Payload    json.RawMessage `json:"payload"`
+}
+
+// NewClient creates an APIClient configured to communicate with the
+// specified base URL.
 func NewClient(baseURL string) *APIClient {
 	return &APIClient{BaseURL: baseURL}
 }
 
+// Register sends a registration request for a new user.
 func (c *APIClient) Register(username, password string) error {
 	reqBody := RegisterReq{
 		Username: username,
@@ -39,11 +106,8 @@ func (c *APIClient) Register(username, password string) error {
 	return nil
 }
 
-type RegisterReq struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
+// Login authenticates with the server and stores the returned JWT in
+// the client's Token field.
 func (c *APIClient) Login(username, password string) error {
 	reqBody := LoginReq{
 		Username: username,
@@ -85,57 +149,7 @@ func (c *APIClient) Login(username, password string) error {
 	return nil
 }
 
-type LoginReq struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
-type SecretMeta struct {
-	ID         int    `json:"id"`
-	SecretType string `json:"secret_type"`
-	Metadata   string `json:"metadata"`
-}
-
-func (c *APIClient) ListSecrets(limit, offset int) ([]SecretMeta, error) {
-	req, err := http.NewRequest(
-		http.MethodGet,
-		fmt.Sprintf("%s/api/secret/baselist/?limit=%d&offset=%d", c.BaseURL, limit, offset),
-		nil,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.AddCookie(&http.Cookie{
-		Name:  "jwt",
-		Value: c.Token,
-	})
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("list secrets failed: %s", resp.Status)
-	}
-
-	var secrets []SecretMeta
-	if err := json.NewDecoder(resp.Body).Decode(&secrets); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	return secrets, nil
-}
-
-type Secret struct {
-	SecretType string          `json:"secret_type"`
-	Metadata   string          `json:"metadata"`
-	Payload    json.RawMessage `json:"payload"`
-}
-
+// GetSecret fetches a decrypted secret by its ID.
 func (c *APIClient) GetSecret(secretID int) (Secret, error) {
 	req, err := http.NewRequest(
 		http.MethodGet,
@@ -170,6 +184,8 @@ func (c *APIClient) GetSecret(secretID int) (Secret, error) {
 	return secret, nil
 }
 
+// CreateSecret sends a request to create a new secret and returns the
+// assigned secret ID on success.
 func (c *APIClient) CreateSecret(secret Secret) (int, error) {
 	data, err := json.Marshal(secret)
 	if err != nil {
@@ -216,6 +232,7 @@ func (c *APIClient) CreateSecret(secret Secret) (int, error) {
 	return respBody.ID, nil
 }
 
+// UpdateSecret updates an existing secret identified by secretID.
 func (c *APIClient) UpdateSecret(secretID int, secret Secret) error {
 	data, err := json.Marshal(secret)
 	if err != nil {
@@ -253,6 +270,7 @@ func (c *APIClient) UpdateSecret(secretID int, secret Secret) error {
 	return nil
 }
 
+// DeleteSecret removes a secret identified by secretID.
 func (c *APIClient) DeleteSecret(secretID int) error {
 	req, err := http.NewRequest(
 		http.MethodDelete,

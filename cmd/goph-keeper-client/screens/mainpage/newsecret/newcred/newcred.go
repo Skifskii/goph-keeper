@@ -11,8 +11,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// Name is the canonical identifier for the credential creation screen.
 var Name = "newcred"
 
+// Screen implements the UI for creating a new credential secret.
 type Screen struct {
 	api        *api.APIClient
 	options    []string
@@ -25,6 +27,8 @@ type Screen struct {
 	Quit       bool
 }
 
+// NewScreen constructs a new credential creation Screen wired with
+// the provided API client.
 func NewScreen(apiClient *api.APIClient) *Screen {
 	return &Screen{
 		api: apiClient,
@@ -104,11 +108,15 @@ func (m *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 	return m, cmd
 }
 
+// CredentialPayload represents the JSON structure sent for
+// credential secrets.
 type CredentialPayload struct {
 	Login    string `json:"login"`
 	Password string `json:"password"`
 }
 
+// CreateCredentialSecret builds and sends a credential secret using the
+// API client. It returns an error on failure.
 func (m *Screen) CreateCredentialSecret(login, password, metadata string) error {
 	payload := CredentialPayload{
 		Login:    login,

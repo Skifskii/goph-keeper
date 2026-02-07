@@ -11,8 +11,11 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// Name is the canonical identifier for the secret detail screen.
 var Name = "secret"
 
+// Screen implements the UI for viewing a single secret, including
+// actions to edit or delete the secret.
 type Screen struct {
 	apiClient *api.APIClient
 	SecretID  int
@@ -26,12 +29,15 @@ type Screen struct {
 	Deleted    bool
 }
 
+// NewScreen constructs a secret detail Screen wired with the API client.
 func NewScreen(apiClient *api.APIClient) *Screen {
 	return &Screen{
 		apiClient: apiClient,
 	}
 }
 
+// SetSecretID sets the secret ID to display and starts loading the
+// secret data asynchronously.
 func (s *Screen) SetSecretID(secretID int) tea.Cmd {
 	s.SecretID = secretID
 
@@ -46,6 +52,8 @@ func (s *Screen) SetSecretID(secretID int) tea.Cmd {
 	return s.loadSecret(secretID)
 }
 
+// Init is a noop for the secret detail Screen and implements the
+// Bubble Tea lifecycle.
 func (s *Screen) Init() tea.Cmd {
 	return nil
 }
@@ -62,6 +70,8 @@ func (s *Screen) loadSecret(secretID int) tea.Cmd {
 	}
 }
 
+// Update processes incoming messages, including a loaded secret, and
+// updates the screen state accordingly.
 func (s *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 	var cmd tea.Cmd
 
@@ -102,6 +112,7 @@ func (s *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 	return s, cmd
 }
 
+// View renders the secret details or deletion state for display.
 func (s Screen) View() string {
 	var b strings.Builder
 

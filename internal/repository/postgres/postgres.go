@@ -17,14 +17,18 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-var (
-	ErrEmptyDSN = errors.New("DSN is empty")
-)
+// ErrEmptyDSN is returned when a Postgres constructor is invoked with
+// an empty Data Source Name.
+var ErrEmptyDSN = errors.New("DSN is empty")
 
+// Postgres is a repository implementation that persists data in a
+// PostgreSQL database.
 type Postgres struct {
 	db *sql.DB
 }
 
+// New creates a Postgres repository, runs migrations and opens a DB
+// connection using the provided DSN.
 func New(log *slog.Logger, dsn string) (*Postgres, error) {
 	if dsn == "" {
 		return nil, ErrEmptyDSN
@@ -61,10 +65,13 @@ func runMigrations(log *slog.Logger, dsn string) error {
 	return nil
 }
 
+// Stop closes the underlying database connection.
 func (p *Postgres) Stop() error {
 	return p.db.Close()
 }
 
+// SaveSecret inserts an encrypted secret into the database and returns
+// the newly created secret ID.
 func (p *Postgres) SaveSecret(enc secret.EncryptedSecret) (secretID int, err error) {
 	err = p.db.QueryRow(
 		`INSERT INTO secrets (user_id, encrypted_secret, secret_type, metadata)
@@ -79,6 +86,8 @@ func (p *Postgres) SaveSecret(enc secret.EncryptedSecret) (secretID int, err err
 	return secretID, nil
 }
 
+// GetSecret retrieves an encrypted secret by its ID. It returns
+// repository.ErrSecretNotFound when no row exists for the given id.
 func (p *Postgres) GetSecret(secretID int) (enc secret.EncryptedSecret, err error) {
 	row := p.db.QueryRow(
 		`SELECT
@@ -103,6 +112,8 @@ func (p *Postgres) GetSecret(secretID int) (enc secret.EncryptedSecret, err erro
 	return enc, nil
 }
 
+// SaveUser creates a new user record and returns its database ID.
+// It maps database uniqueness violations to repository.ErrUsernameTaken.
 func (p *Postgres) SaveUser(username, passwordHash string) (userID int, err error) {
 	err = p.db.QueryRow(
 		`INSERT INTO users (username, password_hash)
@@ -123,6 +134,8 @@ func (p *Postgres) SaveUser(username, passwordHash string) (userID int, err erro
 	return userID, nil
 }
 
+// GetUser fetches a user by username. It returns repository.ErrUserNotFound
+// when the username does not exist.
 func (p *Postgres) GetUser(username string) (u user.User, err error) {
 	row := p.db.QueryRow(
 		`SELECT
@@ -145,6 +158,8 @@ func (p *Postgres) GetUser(username string) (u user.User, err error) {
 	return u, nil
 }
 
+// GetUserSecrets returns a paginated list of BaseSecret records for a
+// given user.
 func (p *Postgres) GetUserSecrets(userID, limit, offset int) ([]secret.BaseSecret, error) {
 	rows, err := p.db.Query(
 		`SELECT
@@ -182,6 +197,9 @@ func (p *Postgres) GetUserSecrets(userID, limit, offset int) ([]secret.BaseSecre
 	return secrets, nil
 }
 
+// UpdateSecret updates an existing secret's encrypted payload and
+// metadata. It returns repository.ErrSecretNotFound when the target
+// row does not exist.
 func (p *Postgres) UpdateSecret(enc secret.EncryptedSecret) error {
 	res, err := p.db.Exec(
 		`UPDATE secrets
@@ -208,6 +226,8 @@ func (p *Postgres) UpdateSecret(enc secret.EncryptedSecret) error {
 	return nil
 }
 
+// DeleteSecret removes a secret row by id. If no row is deleted, it
+// returns sql.ErrNoRows.
 func (p *Postgres) DeleteSecret(secretID int) error {
 	res, err := p.db.Exec(
 		`DELETE FROM secrets

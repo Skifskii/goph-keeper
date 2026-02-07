@@ -11,8 +11,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// Name is the canonical identifier for the text creation screen.
 var Name = "newtext"
 
+// Screen implements the UI for creating a new text secret.
 type Screen struct {
 	api        *api.APIClient
 	options    []string
@@ -24,6 +26,8 @@ type Screen struct {
 	Quit       bool
 }
 
+// NewScreen constructs a new text creation Screen wired with the API
+// client.
 func NewScreen(apiClient *api.APIClient) *Screen {
 	return &Screen{
 		api: apiClient,
@@ -35,6 +39,7 @@ func NewScreen(apiClient *api.APIClient) *Screen {
 	}
 }
 
+// Init prepares input models and resets internal state.
 func (m *Screen) Init() tea.Cmd {
 	m.metadata = textinput.New()
 	m.metadata.Placeholder = "__________"
@@ -53,6 +58,8 @@ func (m *Screen) Init() tea.Cmd {
 	return nil
 }
 
+// Update handles input events for the text creation Screen and may
+// trigger secret creation.
 func (m *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 	switch msg := msg.(type) {
 
@@ -98,10 +105,12 @@ func (m *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 	return m, cmd
 }
 
+// TextPayload represents the JSON structure for text secrets.
 type TextPayload struct {
 	Text string `json:"text"`
 }
 
+// CreateTextSecret builds and sends a text secret using the API client.
 func (m *Screen) CreateTextSecret(text, metadata string) error {
 	payload := TextPayload{
 		Text: text,
@@ -152,6 +161,7 @@ func (m *Screen) updateInputs(msg tea.Msg) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
+// View renders the create-text Screen for display.
 func (m Screen) View() string {
 	var b strings.Builder
 

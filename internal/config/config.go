@@ -8,6 +8,9 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// Config holds application configuration loaded from environment
+// variables and optional dotenv files. It contains HTTP, database and
+// security-related settings used during startup.
 type Config struct {
 	HTTP            HTTPConfig
 	DatabaseDSN     string        `env:"DATABASE_DSN"`
@@ -17,10 +20,14 @@ type Config struct {
 	ShutdownTimeout time.Duration `env:"SHUTDOWN_TIMEOUT"`
 }
 
+// HTTPConfig groups HTTP server specific configuration values.
 type HTTPConfig struct {
 	Address string `env:"HTTP_ADDRESS"`
 }
 
+// New parses environment values (optionally from a .env file) and
+// returns a populated Config or an error if required values are missing
+// or invalid.
 func New() (*Config, error) {
 	cfg := Config{}
 

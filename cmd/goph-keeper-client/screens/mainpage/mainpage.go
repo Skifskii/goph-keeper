@@ -10,8 +10,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// Name is the canonical identifier for the main page screen.
 var Name = "mainpage"
 
+// Screen implements the TUI state for the application's main page.
 type Screen struct {
 	options    []string
 	focusIndex int
@@ -19,6 +21,7 @@ type Screen struct {
 	Quit       bool
 }
 
+// NewScreen constructs the main page Screen.
 func NewScreen() *Screen {
 	return &Screen{
 		options: []string{
@@ -28,16 +31,19 @@ func NewScreen() *Screen {
 	}
 }
 
+// NextScreen returns the name of the screen selected by the user.
 func (m Screen) NextScreen() string {
 	return m.options[m.focusIndex]
 }
 
+// Init initializes main page state.
 func (m *Screen) Init() tea.Cmd {
 	m.focusIndex = 0
 	m.Done = false
 	return nil
 }
 
+// Update processes input and advances the main page state.
 func (m *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 	switch msg := msg.(type) {
 

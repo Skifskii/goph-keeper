@@ -11,28 +11,39 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var (
-	ErrEmptyPassword      = errors.New("password is empty")
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrInvalidJWTToken    = errors.New("invalid jwt token")
-)
+// ErrEmptyPassword is returned when an empty password is provided.
+var ErrEmptyPassword = errors.New("password is empty")
 
+// ErrInvalidCredentials indicates the provided username/password pair
+// does not match any known user.
+var ErrInvalidCredentials = errors.New("invalid credentials")
+
+// ErrInvalidJWTToken indicates a parsed JWT token was invalid.
+var ErrInvalidJWTToken = errors.New("invalid jwt token")
+
+// AuthService provides authentication-related operations such as
+// user registration, credential verification and JWT handling.
 type AuthService struct {
 	repo      Repository
 	secretKey string
 	tokenTTL  time.Duration
 }
 
+// Repository defines the storage operations required by AuthService.
 type Repository interface {
 	SaveUser(username, passwordHash string) (int, error)
 	GetUser(username string) (user.User, error)
 }
 
+// Claims represents JWT claims used by the service, extending the
+// standard registered claims with a UserID field.
 type Claims struct {
 	jwt.RegisteredClaims
 	UserID int
 }
 
+// New constructs a new AuthService with a repository, secret key for
+// signing tokens and token TTL duration.
 func New(repo Repository, secretKey string, tokenTTL time.Duration) *AuthService {
 	return &AuthService{
 		repo:      repo,
@@ -41,6 +52,8 @@ func New(repo Repository, secretKey string, tokenTTL time.Duration) *AuthService
 	}
 }
 
+// Register creates a new user with the provided credentials and
+// returns the created user ID.
 func (a *AuthService) Register(username, password string) (int, error) {
 	passwordHash, err := hashPassword(password)
 	if err != nil {
@@ -68,6 +81,7 @@ func hashPassword(password string) (string, error) {
 	return string(hashedBytes), nil
 }
 
+// Login verifies credentials and returns a signed JWT token on success.
 func (a *AuthService) Login(username, password string) (string, error) {
 	// get user from repo
 	user, err := a.repo.GetUser(username)
@@ -108,6 +122,8 @@ func (a *AuthService) buildJWTToken(userID int, duration time.Duration) (string,
 	return tokenString, nil
 }
 
+// AuthenticateWithJWT validates a JWT token string and returns the
+// associated user ID if the token is valid.
 func (a *AuthService) AuthenticateWithJWT(jwtTokenString string) (int, error) {
 	claims := Claims{}
 	token, err := jwt.ParseWithClaims(jwtTokenString, &claims,

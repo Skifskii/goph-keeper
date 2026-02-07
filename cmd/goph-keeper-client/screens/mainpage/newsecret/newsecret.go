@@ -10,8 +10,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// Name is the canonical identifier for the newsecret screen.
 var Name = "newsecret"
 
+// Screen implements the TUI for selecting a new secret type to create.
 type Screen struct {
 	options    []string
 	focusIndex int
@@ -19,6 +21,7 @@ type Screen struct {
 	Quit       bool
 }
 
+// NewScreen constructs the newsecret Screen.
 func NewScreen() *Screen {
 	return &Screen{
 		options: []string{
@@ -28,6 +31,7 @@ func NewScreen() *Screen {
 	}
 }
 
+// Init initializes the newsecret Screen state.
 func (m *Screen) Init() tea.Cmd {
 	m.focusIndex = 0
 	m.Done = false
@@ -35,10 +39,12 @@ func (m *Screen) Init() tea.Cmd {
 	return nil
 }
 
+// NextScreen returns the identifier of the selected child screen.
 func (m Screen) NextScreen() string {
 	return m.options[m.focusIndex]
 }
 
+// Update handles input events for the newsecret Screen.
 func (m *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 	switch msg := msg.(type) {
 

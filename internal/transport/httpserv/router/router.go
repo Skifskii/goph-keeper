@@ -11,16 +11,22 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// Router is a thin wrapper around chi.Mux providing the application
+// HTTP routes and wiring handlers to their endpoints.
 type Router struct {
 	*chi.Mux
 }
 
+// Auther is a composition interface required by the router to handle
+// authentication-related endpoints and middleware.
 type Auther interface {
 	registerhttp.Registerer
 	loginhttp.Loginer
 	middleware.Authenticator
 }
 
+// New builds the application router wiring provided handler adapters
+// and authentication middleware into route handlers.
 func New(
 	log *slog.Logger,
 	auther Auther,

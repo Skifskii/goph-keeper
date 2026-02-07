@@ -12,10 +12,14 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// SecretDeleter describes the behavior required to delete a secret
+// given its ID and the requesting user ID.
 type SecretDeleter interface {
 	DeleteSecret(secretID, userID int) error
 }
 
+// NewDelete returns an HTTP handler for DELETE /secret/{id} that
+// enforces ownership and performs the deletion via SecretDeleter.
 func NewDelete(log *slog.Logger, secretDeleter SecretDeleter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodDelete {

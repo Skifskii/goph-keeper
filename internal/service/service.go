@@ -8,11 +8,16 @@ import (
 	secretservice "github.com/Skifskii/goph-keeper/internal/service/secret"
 )
 
+// Service aggregates application services used by the server.
+// It exposes initialized service instances such as Secret and Auth.
 type Service struct {
 	Secret *secretservice.SecretService
 	Auth   *authservice.AuthService
 }
 
+// New constructs and initializes the main Service bundle.
+// It wires the provided repositories, encryptor and keys into concrete
+// service implementations and returns an error on initialization failure.
 func New(
 	authRepo authservice.Repository,
 	secretRepo secretservice.Repository,

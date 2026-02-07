@@ -9,10 +9,15 @@ import (
 	"github.com/Skifskii/goph-keeper/internal/repository"
 )
 
+// Registerer defines the subset of repository behavior required by the
+// register HTTP handler: creating a new user and returning its ID.
 type Registerer interface {
 	Register(username, password string) (int, error)
 }
 
+// NewPost returns an HTTP handler for POST /register that creates a new
+// user using the provided Registerer and responds with appropriate
+// status codes on conflict or error.
 func NewPost(log *slog.Logger, registerer Registerer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
@@ -57,6 +62,7 @@ func NewPost(log *slog.Logger, registerer Registerer) http.HandlerFunc {
 	}
 }
 
+// RegisterReq is the JSON payload expected by the register endpoint.
 type RegisterReq struct {
 	Username string `json:"username"`
 	Password string `json:"password"`

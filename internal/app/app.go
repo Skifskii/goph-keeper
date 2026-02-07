@@ -15,6 +15,10 @@ import (
 	"github.com/Skifskii/goph-keeper/pkg/crypto"
 )
 
+// Run starts the application: it initializes configuration, logging,
+// repositories, adapters and services, runs the HTTP server and blocks
+// until a termination signal is received. It returns any startup or
+// shutdown error encountered.
 func Run() error {
 	// config
 	cfg, err := config.New()

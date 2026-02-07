@@ -9,20 +9,27 @@ import (
 	"io"
 )
 
-var (
-	ErrCiphertextTooShort = errors.New("ciphertext too short")
-	ErrDecryptFailed      = errors.New("failed to decrypt")
-)
+// ErrCiphertextTooShort is returned when provided ciphertext is smaller
+// than the expected nonce size and therefore invalid for decryption.
+var ErrCiphertextTooShort = errors.New("ciphertext too short")
+
+// ErrDecryptFailed is returned when authenticated decryption fails.
+var ErrDecryptFailed = errors.New("failed to decrypt")
 
 const (
 	nonceSize     = 12
 	masterKeySize = 32
 )
 
+// Crypto provides authenticated encryption and decryption using AES-GCM.
+// It is configured with a fixed-size master key and exposes simple
+// Encrypt/Decrypt methods that operate on byte slices.
 type Crypto struct {
 	aead cipher.AEAD
 }
 
+// New creates a new Crypto instance using the provided masterKey.
+// The masterKey must be exactly 32 bytes long; otherwise an error is returned.
 func New(masterKey []byte) (*Crypto, error) {
 	if len(masterKey) != masterKeySize {
 		return nil, fmt.Errorf("invalid master key length: got %d, expected %d", len(masterKey), masterKeySize)
@@ -41,6 +48,8 @@ func New(masterKey []byte) (*Crypto, error) {
 	return &Crypto{aead: aead}, nil
 }
 
+// Encrypt encrypts and authenticates the given payload and returns
+// the concatenation of nonce and ciphertext suitable for storage or transport.
 func (c *Crypto) Encrypt(payload []byte) ([]byte, error) {
 	nonce := make([]byte, nonceSize)
 	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
@@ -61,6 +70,8 @@ func (c *Crypto) Encrypt(payload []byte) ([]byte, error) {
 	return result, nil
 }
 
+// Decrypt verifies and decrypts data previously produced by Encrypt.
+// It expects the input to contain the nonce followed by the ciphertext.
 func (c *Crypto) Decrypt(data []byte) ([]byte, error) {
 	if len(data) < nonceSize {
 		return nil, ErrCiphertextTooShort

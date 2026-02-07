@@ -11,8 +11,10 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// Name is the canonical identifier for the mysecrets screen.
 var Name = "mysecrets"
 
+// Screen implements the TUI list view for a user's secrets.
 type Screen struct {
 	api        *api.APIClient
 	table      table.Model
@@ -22,6 +24,7 @@ type Screen struct {
 	Done       bool
 }
 
+// NewScreen constructs a mysecrets Screen backed by the provided API client.
 func NewScreen(apiClient *api.APIClient) *Screen {
 	columns := []table.Column{
 		{Title: "ID", Width: 10},
@@ -51,6 +54,7 @@ func NewScreen(apiClient *api.APIClient) *Screen {
 	}
 }
 
+// Init prepares the screen and begins loading secrets.
 func (s *Screen) Init() tea.Cmd {
 	s.SelectedID = ""
 	s.Done = false
@@ -70,6 +74,8 @@ func (s *Screen) loadSecrets() tea.Cmd {
 	}
 }
 
+// Update handles incoming messages, updates table rows and selection
+// state and returns any command to run.
 func (s *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 	var cmd tea.Cmd
 
@@ -110,6 +116,7 @@ func (s *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 	return s, cmd
 }
 
+// View renders the current list or loading/error state for display.
 func (s Screen) View() string {
 	if s.loading {
 		return "\n  loading secrets...\n"

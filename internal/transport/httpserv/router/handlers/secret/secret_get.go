@@ -13,10 +13,15 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// SecretGetter describes the service behavior required by the GET
+// /secret/{id} handler: fetching and returning a decrypted secret
+// for a specific requester.
 type SecretGetter interface {
 	GetSecret(secretID, requesterID int) (enc secret.DecryptedSecret, err error)
 }
 
+// NewGet returns an HTTP handler for GET /secret/{id} that verifies
+// ownership and returns the decrypted secret payload as JSON.
 func NewGet(log *slog.Logger, secretGetter SecretGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
@@ -82,6 +87,7 @@ func NewGet(log *slog.Logger, secretGetter SecretGetter) http.HandlerFunc {
 	}
 }
 
+// GetSecretResponse is the JSON response body returned by GET /secret/{id}.
 type GetSecretResponse struct {
 	SecretType string          `json:"secret_type"`
 	Metadata   string          `json:"metadata"`

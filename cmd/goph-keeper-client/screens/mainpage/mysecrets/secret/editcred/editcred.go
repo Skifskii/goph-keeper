@@ -11,8 +11,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// Name is the canonical identifier for the edit credential screen.
 var Name = "editcred"
 
+// Screen implements the UI for editing a credential secret.
 type Screen struct {
 	api        *api.APIClient
 	secretID   int
@@ -26,6 +28,7 @@ type Screen struct {
 	Quit       bool
 }
 
+// NewScreen constructs an edit credential Screen wired with the API client.
 func NewScreen(apiClient *api.APIClient) *Screen {
 	return &Screen{
 		api: apiClient,
@@ -38,6 +41,8 @@ func NewScreen(apiClient *api.APIClient) *Screen {
 	}
 }
 
+// InitWitParams initializes the edit screen state with existing secret
+// parameters and payload. It prepares input fields for editing.
 func (m *Screen) InitWitParams(secretID int, metadata string, payload json.RawMessage) tea.Cmd {
 	var p CredentialPayload
 	json.Unmarshal(payload, &p)
@@ -68,10 +73,13 @@ func (m *Screen) InitWitParams(secretID int, metadata string, payload json.RawMe
 	return nil
 }
 
+// Init implements the Bubble Tea Init hook for the edit screen.
 func (m *Screen) Init() tea.Cmd {
 	return nil
 }
 
+// Update processes events for the edit screen and triggers updates
+// to the secret when requested.
 func (m *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 	switch msg := msg.(type) {
 
@@ -117,11 +125,15 @@ func (m *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 	return m, cmd
 }
 
+// CredentialPayload represents the JSON structure used for credential
+// secrets in edit operations.
 type CredentialPayload struct {
 	Login    string `json:"login"`
 	Password string `json:"password"`
 }
 
+// EditCredentialSecret builds and sends an update for the given secret
+// id using the API client.
 func (m *Screen) EditCredentialSecret(login, password, metadata string) error {
 	payload := CredentialPayload{
 		Login:    login,
