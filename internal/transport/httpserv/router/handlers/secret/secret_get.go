@@ -38,6 +38,8 @@ func NewGet(log *slog.Logger, secretGetter SecretGetter) http.HandlerFunc {
 		}
 		log = log.With(slog.Int("user_id", userID))
 
+		log.Info("new request")
+
 		// read params
 		secretIDParam := chi.URLParam(r, "id")
 		if secretIDParam == "" {

@@ -90,9 +90,9 @@ type LoginReq struct {
 }
 
 type SecretMeta struct {
-	ID         int
-	SecretType string
-	Metadata   string
+	ID         int    `json:"id"`
+	SecretType string `json:"secret_type"`
+	Metadata   string `json:"metadata"`
 }
 
 func (c *APIClient) ListSecrets(limit, offset int) ([]SecretMeta, error) {
@@ -127,4 +127,44 @@ func (c *APIClient) ListSecrets(limit, offset int) ([]SecretMeta, error) {
 	}
 
 	return secrets, nil
+}
+
+type Secret struct {
+	SecretType string          `json:"secret_type"`
+	Metadata   string          `json:"metadata"`
+	Payload    json.RawMessage `json:"payload"`
+}
+
+func (c *APIClient) GetSecret(secretID int) (Secret, error) {
+	req, err := http.NewRequest(
+		http.MethodGet,
+		fmt.Sprintf("%s/api/secret/%d", c.BaseURL, secretID),
+		nil,
+	)
+	if err != nil {
+		return Secret{}, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.AddCookie(&http.Cookie{
+		Name:  "jwt",
+		Value: c.Token,
+	})
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return Secret{}, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return Secret{}, fmt.Errorf("list secrets failed: %s", resp.Status)
+	}
+
+	var secret Secret
+	if err := json.NewDecoder(resp.Body).Decode(&secret); err != nil {
+		return Secret{}, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return secret, nil
 }

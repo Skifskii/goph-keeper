@@ -1,24 +1,28 @@
-package screens
+package mysecrets_screen
 
 import (
 	"fmt"
 	"strconv"
 
 	"github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/api"
+	"github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
-type MySecretsScreen struct {
-	api     *api.APIClient
-	table   table.Model
-	loading bool
-	err     string
-	Done    bool
+var Name = "mysecrets"
+
+type Screen struct {
+	api        *api.APIClient
+	table      table.Model
+	loading    bool
+	err        string
+	SelectedID string
+	Done       bool
 }
 
-func NewMySecretsScreen(apiClient *api.APIClient) *MySecretsScreen {
+func NewScreen(apiClient *api.APIClient) *Screen {
 	columns := []table.Column{
 		{Title: "ID", Width: 10},
 		{Title: "Type", Width: 12},
@@ -41,13 +45,14 @@ func NewMySecretsScreen(apiClient *api.APIClient) *MySecretsScreen {
 
 	t.SetStyles(styles)
 
-	return &MySecretsScreen{
+	return &Screen{
 		api:   apiClient,
 		table: t,
 	}
 }
 
-func (s *MySecretsScreen) Init() tea.Cmd {
+func (s *Screen) Init() tea.Cmd {
+	s.SelectedID = ""
 	s.Done = false
 	s.loading = true
 	return s.loadSecrets()
@@ -55,7 +60,7 @@ func (s *MySecretsScreen) Init() tea.Cmd {
 
 type secretsLoadedMsg []api.SecretMeta
 
-func (s *MySecretsScreen) loadSecrets() tea.Cmd {
+func (s *Screen) loadSecrets() tea.Cmd {
 	return func() tea.Msg {
 		secrets, err := s.api.ListSecrets(50, 0)
 		if err != nil {
@@ -65,7 +70,7 @@ func (s *MySecretsScreen) loadSecrets() tea.Cmd {
 	}
 }
 
-func (s *MySecretsScreen) Update(msg tea.Msg) (*MySecretsScreen, tea.Cmd) {
+func (s *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
@@ -93,6 +98,7 @@ func (s *MySecretsScreen) Update(msg tea.Msg) (*MySecretsScreen, tea.Cmd) {
 		case "enter":
 			selected := s.table.SelectedRow()
 			fmt.Println("open secret:", selected[0])
+			s.SelectedID = selected[0]
 			s.Done = true
 
 		case "q", "esc":
@@ -104,13 +110,13 @@ func (s *MySecretsScreen) Update(msg tea.Msg) (*MySecretsScreen, tea.Cmd) {
 	return s, cmd
 }
 
-func (s MySecretsScreen) View() string {
+func (s Screen) View() string {
 	if s.loading {
 		return "\n  loading secrets...\n"
 	}
 
 	if s.err != "" {
-		return errorStyle.Render(s.err)
+		return screens.ErrorStyle.Render(s.err)
 	}
 
 	return lipgloss.NewStyle().
@@ -118,5 +124,5 @@ func (s MySecretsScreen) View() string {
 		BorderForeground(lipgloss.Color("240")).
 		Render(s.table.View()) +
 		"\n\n" +
-		helpStyle.Render("  ↑ ↓ navigate   Enter open   q back")
+		screens.HelpStyle.Render("  ↑ ↓ navigate   Enter open   q back")
 }

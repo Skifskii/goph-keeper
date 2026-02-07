@@ -1,24 +1,18 @@
-package screens
+package login_screen
 
 import (
 	"fmt"
 	"strings"
 
 	"github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/api"
+	"github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
-var (
-	labelStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-	italicStyle  = lipgloss.NewStyle().Italic(true)
-	blurredStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	errorStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
-	helpStyle    = blurredStyle
-)
+var Name = "login"
 
-type LoginScreen struct {
+type Screen struct {
 	api        *api.APIClient
 	options    []string
 	username   textinput.Model
@@ -28,7 +22,7 @@ type LoginScreen struct {
 	Done       bool
 }
 
-func NewLoginScreen(apiClient *api.APIClient) *LoginScreen {
+func NewScreen(apiClient *api.APIClient) *Screen {
 	username := textinput.New()
 	username.Placeholder = "__________"
 	username.Prompt = ""
@@ -40,7 +34,7 @@ func NewLoginScreen(apiClient *api.APIClient) *LoginScreen {
 	password.EchoMode = textinput.EchoPassword
 	password.EchoCharacter = '•'
 
-	return &LoginScreen{
+	return &Screen{
 		api:      apiClient,
 		username: username,
 		password: password,
@@ -53,11 +47,11 @@ func NewLoginScreen(apiClient *api.APIClient) *LoginScreen {
 	}
 }
 
-func (l LoginScreen) Init() tea.Cmd {
+func (l Screen) Init() tea.Cmd {
 	return nil
 }
 
-func (l *LoginScreen) Update(msg tea.Msg) (*LoginScreen, tea.Cmd) {
+func (l *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tea.KeyMsg:
@@ -96,7 +90,7 @@ func (l *LoginScreen) Update(msg tea.Msg) (*LoginScreen, tea.Cmd) {
 	return l, cmd
 }
 
-func (l *LoginScreen) updateFocus() {
+func (l *Screen) updateFocus() {
 	l.username.Blur()
 	l.password.Blur()
 
@@ -108,7 +102,7 @@ func (l *LoginScreen) updateFocus() {
 	}
 }
 
-func (l *LoginScreen) updateInputs(msg tea.Msg) tea.Cmd {
+func (l *Screen) updateInputs(msg tea.Msg) tea.Cmd {
 	cmds := make([]tea.Cmd, 2)
 
 	// Only update text inputs if they're focused
@@ -122,11 +116,11 @@ func (l *LoginScreen) updateInputs(msg tea.Msg) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-func (l LoginScreen) View() string {
+func (l Screen) View() string {
 	var b strings.Builder
 
 	// title
-	b.WriteString(labelStyle.Render("    welcome to goph-keeper!"))
+	b.WriteString(screens.LabelStyle.Render("    welcome to goph-keeper!"))
 	b.WriteString("\n\n\n")
 
 	// login
@@ -139,25 +133,25 @@ func (l LoginScreen) View() string {
 	b.WriteString(l.password.View())
 	b.WriteString("\n")
 	if l.loginErr != "" {
-		b.WriteString(errorStyle.Render(l.loginErr))
+		b.WriteString(screens.ErrorStyle.Render(l.loginErr))
 		b.WriteString("\n")
 	}
 	b.WriteString(l.buildRow("submit"))
 	b.WriteString("\n\n\n")
 
 	// register
-	b.WriteString(italicStyle.Render("    Don't have an account?"))
+	b.WriteString(screens.ItalicStyle.Render("    Don't have an account?"))
 	b.WriteString("\n")
 	b.WriteString(l.buildRow("signup"))
 	b.WriteString("\n\n\n")
 
-	b.WriteString(helpStyle.Render("    Use ↑, ↓ and Enter to navigate, "))
+	b.WriteString(screens.HelpStyle.Render("    Use ↑, ↓ and Enter to navigate, "))
 	b.WriteString("\n")
 
 	return b.String()
 }
 
-func (l LoginScreen) buildRow(option string) string {
+func (l Screen) buildRow(option string) string {
 	cursor := " "
 	if option == l.options[l.focusIndex] {
 		cursor = ">"
@@ -166,7 +160,7 @@ func (l LoginScreen) buildRow(option string) string {
 	return fmt.Sprintf("[%s] %s", cursor, l.optionToUIName(option))
 }
 
-func (l LoginScreen) optionToUIName(op string) string {
+func (l Screen) optionToUIName(op string) string {
 	switch op {
 	case "username":
 		return "username"

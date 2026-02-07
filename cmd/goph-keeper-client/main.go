@@ -3,27 +3,36 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/api"
-	"github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens"
+	login_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/login"
+	mainpage_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage"
+	mysecrets_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage/mysecrets"
+	secret_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage/mysecrets/secret"
+	newsecret_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage/newsecret"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type model struct {
-	currentScreen   string
-	loginScreen     *screens.LoginScreen
-	mainPageScreen  *screens.MainPageScreen
-	mySecretsScreen *screens.MySecretsScreen
+	currentScreen string
+	login         *login_screen.Screen
+	mainPage      *mainpage_screen.Screen
+	mySecrets     *mysecrets_screen.Screen
+	secret        *secret_screen.Screen
 }
 
 func initialModel() model {
 	apiClient := api.NewClient("http://localhost:8080")
 
 	return model{
-		currentScreen:   "login",
-		loginScreen:     screens.NewLoginScreen(apiClient),
-		mainPageScreen:  screens.NewMainPageScreen(),
-		mySecretsScreen: screens.NewMySecretsScreen(apiClient),
+		currentScreen: login_screen.Name,
+
+		login:     login_screen.NewScreen(apiClient),
+		mainPage:  mainpage_screen.NewScreen(),
+		mySecrets: mysecrets_screen.NewScreen(apiClient),
+		secret:    secret_screen.NewScreen(apiClient),
 	}
 }
 
@@ -41,26 +50,57 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var cmd tea.Cmd
 	switch m.currentScreen {
-	case screens.ScreenLogin:
-		m.loginScreen, cmd = m.loginScreen.Update(msg)
-		if m.loginScreen.Done {
-			m.currentScreen = screens.ScreenMainPage
-			return m, m.mainPageScreen.Init()
+
+	// login
+	case login_screen.Name:
+		m.login, cmd = m.login.Update(msg)
+
+		if m.login.Done {
+			// change screen to "main page"
+			m.currentScreen = mainpage_screen.Name
+			return m, m.mainPage.Init()
 		}
-	case screens.ScreenMainPage:
-		m.mainPageScreen, cmd = m.mainPageScreen.Update(msg)
-		if m.mainPageScreen.Done {
-			nextScreen := m.mainPageScreen.NextScreen()
-			m.currentScreen = nextScreen
-			if nextScreen == screens.ScreenMySecrets {
-				return m, m.mySecretsScreen.Init()
+
+	// main page
+	case mainpage_screen.Name:
+		m.mainPage, cmd = m.mainPage.Update(msg)
+
+		if m.mainPage.Done {
+			switch m.mainPage.NextScreen() {
+			case mysecrets_screen.Name:
+				// change screen to "my secrets"
+				m.currentScreen = mysecrets_screen.Name
+				return m, m.mySecrets.Init()
+			case newsecret_screen.Name:
+				// change screen to "new secret"
+				return m, nil // TODO:
 			}
 		}
-	case screens.ScreenMySecrets:
-		m.mySecretsScreen, cmd = m.mySecretsScreen.Update(msg)
-		if m.mySecretsScreen.Done {
-			m.currentScreen = screens.ScreenMainPage
-			return m, m.mainPageScreen.Init()
+
+	// my secrets
+	case mysecrets_screen.Name:
+		m.mySecrets, cmd = m.mySecrets.Update(msg)
+
+		if m.mySecrets.Done {
+			// quit
+			if m.mySecrets.SelectedID == "" {
+				m.currentScreen = mainpage_screen.Name
+				return m, m.mainPage.Init()
+			}
+
+			// open secret
+			selectedID, _ := strconv.Atoi(m.mySecrets.SelectedID) // TODO: check error
+			m.currentScreen = secret_screen.Name
+			return m, m.secret.SetSecretID(selectedID)
+		}
+
+	case secret_screen.Name:
+		m.secret, cmd = m.secret.Update(msg)
+
+		if m.secret.Done {
+			// quit
+			m.currentScreen = mysecrets_screen.Name
+			return m, m.mySecrets.Init()
 		}
 	}
 
@@ -69,12 +109,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 	switch m.currentScreen {
-	case screens.ScreenLogin:
-		return m.loginScreen.View()
-	case screens.ScreenMainPage:
-		return m.mainPageScreen.View()
-	case screens.ScreenMySecrets:
-		return m.mySecretsScreen.View()
+	case login_screen.Name:
+		return m.login.View()
+	case mainpage_screen.Name:
+		return m.mainPage.View()
+	case mysecrets_screen.Name:
+		return m.mySecrets.View()
+	case secret_screen.Name:
+		return m.secret.View()
+
 	default:
 		return fmt.Sprintf("unknown screen: '%s'", m.currentScreen)
 	}
