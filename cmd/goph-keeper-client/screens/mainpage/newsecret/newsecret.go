@@ -6,6 +6,7 @@ import (
 
 	"github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens"
 	newcred_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage/newsecret/newcred"
+	newtext_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage/newsecret/newtext"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -22,6 +23,7 @@ func NewScreen() *Screen {
 	return &Screen{
 		options: []string{
 			newcred_screen.Name,
+			newtext_screen.Name,
 		},
 	}
 }
@@ -79,6 +81,7 @@ func (m Screen) View() string {
 	b.WriteString("\n")
 	b.WriteString(m.buildRow("credential", 0))
 	b.WriteString("\n")
+	b.WriteString(m.buildRow("text", 1))
 	b.WriteString("\n\n\n")
 
 	b.WriteString(screens.HelpStyle.Render("    Use '↑', '↓' and 'Enter' to navigate, 'q' to exit"))

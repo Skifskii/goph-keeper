@@ -86,7 +86,7 @@ func (s Screen) View() string {
 	var b strings.Builder
 
 	// title
-	b.WriteString(screens.LabelStyle.Render("    goph-keeper | secret"))
+	b.WriteString(screens.LabelStyle.Render("    goph-keeper / main page / my secrets / secret"))
 	b.WriteString("\n\n\n")
 
 	// info

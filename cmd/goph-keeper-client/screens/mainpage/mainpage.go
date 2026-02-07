@@ -66,7 +66,7 @@ func (m Screen) View() string {
 	var b strings.Builder
 
 	// title
-	b.WriteString(screens.LabelStyle.Render("    goph-keeper | main page"))
+	b.WriteString(screens.LabelStyle.Render("    goph-keeper / main page"))
 	b.WriteString("\n\n\n")
 
 	// login

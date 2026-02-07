@@ -12,6 +12,7 @@ import (
 	secret_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage/mysecrets/secret"
 	newsecret_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage/newsecret"
 	newcred_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage/newsecret/newcred"
+	newtext_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage/newsecret/newtext"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -24,6 +25,7 @@ type model struct {
 	secret        *secret_screen.Screen
 	newSecret     *newsecret_screen.Screen
 	newCred       *newcred_screen.Screen
+	newText       *newtext_screen.Screen
 }
 
 func initialModel() model {
@@ -38,6 +40,7 @@ func initialModel() model {
 		secret:    secret_screen.NewScreen(apiClient),
 		newSecret: newsecret_screen.NewScreen(),
 		newCred:   newcred_screen.NewScreen(apiClient),
+		newText:   newtext_screen.NewScreen(apiClient),
 	}
 }
 
@@ -125,6 +128,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// change screen to "new cred"
 				m.currentScreen = newcred_screen.Name
 				return m, m.newCred.Init()
+
+			case newtext_screen.Name:
+				// change screen to "new text"
+				m.currentScreen = newtext_screen.Name
+				return m, m.newText.Init()
 			}
 		}
 
@@ -133,6 +141,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.newCred, cmd = m.newCred.Update(msg)
 
 		if m.newCred.Done {
+			// change screen to "new cred"
+			m.currentScreen = mysecrets_screen.Name
+			return m, m.mySecrets.Init()
+		}
+
+	// new text
+	case newtext_screen.Name:
+		m.newText, cmd = m.newText.Update(msg)
+
+		if m.newText.Done {
 			// change screen to "new cred"
 			m.currentScreen = mysecrets_screen.Name
 			return m, m.mySecrets.Init()
@@ -156,6 +174,8 @@ func (m model) View() string {
 		return m.newSecret.View()
 	case newcred_screen.Name:
 		return m.newCred.View()
+	case newtext_screen.Name:
+		return m.newText.View()
 
 	default:
 		return fmt.Sprintf("unknown screen: '%s'", m.currentScreen)
