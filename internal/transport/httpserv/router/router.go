@@ -26,6 +26,7 @@ func New(
 	auther Auther,
 	secretCreator secrethttp.SecretCreator,
 	secretGetter secrethttp.SecretGetter,
+	secretUpdater secrethttp.SecretUpdater,
 	baseSecretLister baselisthttp.BaseSecretsLister,
 ) *Router {
 	r := chi.NewRouter()
@@ -47,6 +48,7 @@ func New(
 				})
 				r.Post("/", secrethttp.NewPost(log, secretCreator))
 				r.Get("/{id}", secrethttp.NewGet(log, secretGetter))
+				r.Put("/{id}", secrethttp.NewPut(log, secretUpdater))
 			})
 		})
 	})

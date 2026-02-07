@@ -82,6 +82,7 @@ func (p *Postgres) SaveSecret(enc secret.EncryptedSecret) (secretID int, err err
 func (p *Postgres) GetSecret(secretID int) (enc secret.EncryptedSecret, err error) {
 	row := p.db.QueryRow(
 		`SELECT
+			id,
 			user_id,
 			encrypted_secret,
 			secret_type,
@@ -92,7 +93,7 @@ func (p *Postgres) GetSecret(secretID int) (enc secret.EncryptedSecret, err erro
 		secretID,
 	)
 
-	err = row.Scan(&enc.UserID, &enc.EncPayload, &enc.SecretType, &enc.Metadata)
+	err = row.Scan(&enc.ID, &enc.UserID, &enc.EncPayload, &enc.SecretType, &enc.Metadata)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return secret.EncryptedSecret{}, repository.ErrSecretNotFound
@@ -179,4 +180,30 @@ func (p *Postgres) GetUserSecrets(userID, limit, offset int) ([]secret.BaseSecre
 	}
 
 	return secrets, nil
+}
+
+func (p *Postgres) UpdateSecret(enc secret.EncryptedSecret) error {
+	res, err := p.db.Exec(
+		`UPDATE secrets
+		SET encrypted_secret = $1,
+		    metadata = $2
+		WHERE id = $3;`,
+		enc.EncPayload,
+		enc.Metadata,
+		enc.ID,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to run update query: %w", err)
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get affected rows: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return repository.ErrSecretNotFound
+	}
+
+	return nil
 }

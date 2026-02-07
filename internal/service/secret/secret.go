@@ -23,6 +23,7 @@ type Repository interface {
 	SaveSecret(enc secret.EncryptedSecret) (secretID int, err error)
 	GetSecret(secretID int) (enc secret.EncryptedSecret, err error)
 	GetUserSecrets(userID, limit, offset int) ([]secret.BaseSecret, error)
+	UpdateSecret(enc secret.EncryptedSecret) error
 }
 
 type Encryptor interface {
@@ -107,15 +108,6 @@ func (s *SecretService) GetSecret(secretID, requesterID int) (secret.DecryptedSe
 	return decSecret, nil
 }
 
-func (s *SecretService) GetBaseSecretsList(userID, limit, offset int) ([]secret.BaseSecret, error) {
-	secrets, err := s.repo.GetUserSecrets(userID, limit, offset)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user secrets from repo: %w", err)
-	}
-
-	return secrets, nil
-}
-
 func (s *SecretService) decryptSecret(dec secret.EncryptedSecret) (secret.DecryptedSecret, error) {
 	decPayload, err := s.encryptor.Decrypt(dec.EncPayload)
 	if err != nil {
@@ -125,4 +117,57 @@ func (s *SecretService) decryptSecret(dec secret.EncryptedSecret) (secret.Decryp
 		BaseSecret: dec.BaseSecret,
 		DecPayload: decPayload,
 	}, nil
+}
+
+func (s *SecretService) GetBaseSecretsList(userID, limit, offset int) ([]secret.BaseSecret, error) {
+	secrets, err := s.repo.GetUserSecrets(userID, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user secrets from repo: %w", err)
+	}
+
+	return secrets, nil
+}
+
+func (s *SecretService) UpdateSecret(
+	payload json.RawMessage,
+	metadata string,
+	secretID, userID int,
+) (int, error) {
+	// get secret from repo
+	encSecret, err := s.repo.GetSecret(secretID)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get secret from repo: %w", err)
+	}
+
+	// check access
+	if encSecret.UserID != userID {
+		return 0, ErrSecretAccessDenied
+	}
+
+	// create new decrypted secret
+	decSecret, err := secret.NewDecryptedSecret(
+		secret.BaseSecret{
+			ID:         encSecret.ID,
+			UserID:     encSecret.UserID,
+			SecretType: encSecret.SecretType, // тип менять нельзя
+			Metadata:   metadata,
+		},
+		payload,
+	)
+	if err != nil {
+		return 0, ErrRequestValidation
+	}
+
+	// encrypt payload
+	updatedEncSecret, err := s.encryptSecret(decSecret)
+	if err != nil {
+		return 0, err
+	}
+
+	// update in repo
+	if err := s.repo.UpdateSecret(updatedEncSecret); err != nil {
+		return 0, fmt.Errorf("failed to update secret in repo: %w", err)
+	}
+
+	return secretID, nil
 }

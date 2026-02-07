@@ -56,7 +56,7 @@ func Run() error {
 	}
 
 	// transport
-	httpServer := httpserv.New(log, cfg.HTTP.Address, serv.Auth, serv.Secret, serv.Secret, serv.Secret)
+	httpServer := httpserv.New(log, cfg.HTTP.Address, serv.Auth, serv.Secret, serv.Secret, serv.Secret, serv.Secret)
 	go httpServer.MustRun()
 
 	// graceful shutdown

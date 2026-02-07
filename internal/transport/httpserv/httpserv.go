@@ -21,13 +21,14 @@ func New(
 	auther router.Auther,
 	secretCreator secrethttp.SecretCreator,
 	secretGetter secrethttp.SecretGetter,
+	secretUpdater secrethttp.SecretUpdater,
 	baseSecretLister baselisthttp.BaseSecretsLister,
 ) *HTTPServer {
 	h := HTTPServer{
 		log: log,
 		server: &http.Server{
 			Addr:    addr,
-			Handler: router.New(log, auther, secretCreator, secretGetter, baseSecretLister),
+			Handler: router.New(log, auther, secretCreator, secretGetter, secretUpdater, baseSecretLister),
 		},
 	}
 
