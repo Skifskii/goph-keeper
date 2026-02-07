@@ -50,6 +50,8 @@ func NewPost(log *slog.Logger, registerer Registerer) http.HandlerFunc {
 			return
 		}
 
+		log.Info("new user successfully registered!")
+
 		// compose the response
 		w.WriteHeader(http.StatusOK)
 	}

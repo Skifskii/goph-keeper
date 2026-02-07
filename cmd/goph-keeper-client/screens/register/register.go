@@ -1,4 +1,4 @@
-package login_screen
+package register_screen
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-var Name = "login"
+var Name = "register"
 
 type Screen struct {
 	api        *api.APIClient
@@ -30,7 +30,7 @@ func NewScreen(apiClient *api.APIClient) *Screen {
 			"username",
 			"password",
 			"submit",
-			"signup",
+			"signin",
 		},
 	}
 }
@@ -77,7 +77,7 @@ func (l *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 			// submit
 			case 2:
 				if !l.Done {
-					err := l.api.Login(l.username.Value(), l.password.Value())
+					err := l.api.Register(l.username.Value(), l.password.Value())
 					if err != nil {
 						l.err = err.Error()
 						return l, nil
@@ -133,7 +133,7 @@ func (l Screen) View() string {
 	b.WriteString("\n\n\n")
 
 	// login
-	b.WriteString("    LOGIN")
+	b.WriteString("    REGISTER")
 	b.WriteString("\n")
 	b.WriteString(l.buildRow("username") + ": ")
 	b.WriteString(l.username.View())
@@ -149,9 +149,9 @@ func (l Screen) View() string {
 	b.WriteString("\n\n\n")
 
 	// register
-	b.WriteString(screens.ItalicStyle.Render("    Don't have an account?"))
+	b.WriteString(screens.ItalicStyle.Render("    Already have an account?"))
 	b.WriteString("\n")
-	b.WriteString(l.buildRow("signup"))
+	b.WriteString(l.buildRow("signin"))
 	b.WriteString("\n\n\n")
 
 	b.WriteString(screens.HelpStyle.Render("    Use '↑', '↓' and 'Enter' to navigate"))
@@ -177,8 +177,8 @@ func (l Screen) optionToUIName(op string) string {
 		return "password"
 	case "submit":
 		return "[ submit ]"
-	case "signup":
-		return "[ sign up ]"
+	case "signin":
+		return "[ sign in ]"
 	default:
 		return "ERROR: unknown"
 	}

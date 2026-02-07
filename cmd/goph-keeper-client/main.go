@@ -13,28 +13,37 @@ import (
 	newsecret_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage/newsecret"
 	newcred_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage/newsecret/newcred"
 	newtext_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage/newsecret/newtext"
+	register_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/register"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type model struct {
 	currentScreen string
-	login         *login_screen.Screen
-	mainPage      *mainpage_screen.Screen
-	mySecrets     *mysecrets_screen.Screen
-	secret        *secret_screen.Screen
-	newSecret     *newsecret_screen.Screen
-	newCred       *newcred_screen.Screen
-	newText       *newtext_screen.Screen
+
+	login    *login_screen.Screen
+	register *register_screen.Screen
+
+	mainPage  *mainpage_screen.Screen
+	mySecrets *mysecrets_screen.Screen
+	secret    *secret_screen.Screen
+	newSecret *newsecret_screen.Screen
+	newCred   *newcred_screen.Screen
+	newText   *newtext_screen.Screen
 }
 
 func initialModel() model {
 	apiClient := api.NewClient("http://localhost:8080")
 
+	login := login_screen.NewScreen(apiClient)
+	login.Init()
+
 	return model{
 		currentScreen: login_screen.Name,
 
-		login:     login_screen.NewScreen(apiClient),
+		login:    login,
+		register: register_screen.NewScreen(apiClient),
+
 		mainPage:  mainpage_screen.NewScreen(),
 		mySecrets: mysecrets_screen.NewScreen(apiClient),
 		secret:    secret_screen.NewScreen(apiClient),
@@ -63,10 +72,26 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case login_screen.Name:
 		m.login, cmd = m.login.Update(msg)
 
+		if m.login.Switch {
+			// change screen to "register"
+			m.currentScreen = register_screen.Name
+			return m, m.register.Init()
+		}
+
 		if m.login.Done {
 			// change screen to "main page"
 			m.currentScreen = mainpage_screen.Name
 			return m, m.mainPage.Init()
+		}
+
+	// register
+	case register_screen.Name:
+		m.register, cmd = m.register.Update(msg)
+
+		if m.register.Switch || m.register.Done {
+			// change screen to "login"
+			m.currentScreen = login_screen.Name
+			return m, m.login.Init()
 		}
 
 	// main page
@@ -164,6 +189,8 @@ func (m model) View() string {
 	switch m.currentScreen {
 	case login_screen.Name:
 		return m.login.View()
+	case register_screen.Name:
+		return m.register.View()
 	case mainpage_screen.Name:
 		return m.mainPage.View()
 	case mysecrets_screen.Name:
