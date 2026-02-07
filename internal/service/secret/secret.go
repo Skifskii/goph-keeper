@@ -21,6 +21,7 @@ type SecretService struct {
 type Repository interface {
 	SaveSecret(enc secret.EncryptedSecret) (secretID int, err error)
 	GetSecret(secretID int) (enc secret.EncryptedSecret, err error)
+	GetUserSecrets(userID, limit, offset int) ([]secret.BaseSecret, error)
 }
 
 type Encryptor interface {
@@ -103,6 +104,15 @@ func (s *SecretService) GetSecret(secretID, requesterID int) (secret.DecryptedSe
 	}
 
 	return decSecret, nil
+}
+
+func (s *SecretService) GetBaseSecretsList(userID, limit, offset int) ([]secret.BaseSecret, error) {
+	secrets, err := s.repo.GetUserSecrets(userID, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user secrets from repo: %w", err)
+	}
+
+	return secrets, nil
 }
 
 func (s *SecretService) decryptSecret(dec secret.EncryptedSecret) (secret.DecryptedSecret, error) {

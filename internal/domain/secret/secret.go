@@ -6,6 +6,7 @@ import (
 )
 
 type BaseSecret struct {
+	ID         int
 	UserID     int
 	Metadata   string
 	SecretType SecretType

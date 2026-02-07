@@ -8,6 +8,7 @@ import (
 
 	"github.com/Skifskii/goph-keeper/internal/transport/httpserv/router"
 	secrethttp "github.com/Skifskii/goph-keeper/internal/transport/httpserv/router/handlers/secret"
+	baselisthttp "github.com/Skifskii/goph-keeper/internal/transport/httpserv/router/handlers/secret/baselist"
 )
 
 type HTTPServer struct {
@@ -20,12 +21,13 @@ func New(
 	auther router.Auther,
 	secretCreator secrethttp.SecretCreator,
 	secretGetter secrethttp.SecretGetter,
+	baseSecretLister baselisthttp.BaseSecretsLister,
 ) *HTTPServer {
 	h := HTTPServer{
 		log: log,
 		server: &http.Server{
 			Addr:    addr,
-			Handler: router.New(log, auther, secretCreator, secretGetter),
+			Handler: router.New(log, auther, secretCreator, secretGetter, baseSecretLister),
 		},
 	}
 

@@ -143,3 +143,40 @@ func (p *Postgres) GetUser(username string) (u user.User, err error) {
 	}
 	return u, nil
 }
+
+func (p *Postgres) GetUserSecrets(userID, limit, offset int) ([]secret.BaseSecret, error) {
+	rows, err := p.db.Query(
+		`SELECT
+			id,
+			user_id,
+			metadata,
+			secret_type
+		FROM secrets
+		WHERE user_id = $1
+		ORDER BY id
+		LIMIT $2 OFFSET $3;`,
+		userID,
+		limit,
+		offset,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query secrets: %w", err)
+	}
+	defer rows.Close()
+
+	secrets := make([]secret.BaseSecret, 0)
+
+	for rows.Next() {
+		var s secret.BaseSecret
+		if err := rows.Scan(&s.ID, &s.UserID, &s.Metadata, &s.SecretType); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+		secrets = append(secrets, s)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration error: %w", err)
+	}
+
+	return secrets, nil
+}

@@ -6,6 +6,7 @@ import (
 	loginhttp "github.com/Skifskii/goph-keeper/internal/transport/httpserv/router/handlers/login"
 	registerhttp "github.com/Skifskii/goph-keeper/internal/transport/httpserv/router/handlers/register"
 	secrethttp "github.com/Skifskii/goph-keeper/internal/transport/httpserv/router/handlers/secret"
+	baselisthttp "github.com/Skifskii/goph-keeper/internal/transport/httpserv/router/handlers/secret/baselist"
 	"github.com/Skifskii/goph-keeper/internal/transport/httpserv/router/middleware"
 	"github.com/go-chi/chi/v5"
 )
@@ -25,6 +26,7 @@ func New(
 	auther Auther,
 	secretCreator secrethttp.SecretCreator,
 	secretGetter secrethttp.SecretGetter,
+	baseSecretLister baselisthttp.BaseSecretsLister,
 ) *Router {
 	r := chi.NewRouter()
 
@@ -40,6 +42,9 @@ func New(
 			r.Use(middleware.Auth(log, auther))
 
 			r.Route("/secret", func(r chi.Router) {
+				r.Route("/baselist", func(r chi.Router) {
+					r.Get("/", baselisthttp.NewGet(log, baseSecretLister))
+				})
 				r.Post("/", secrethttp.NewPost(log, secretCreator))
 				r.Get("/{id}", secrethttp.NewGet(log, secretGetter))
 			})
