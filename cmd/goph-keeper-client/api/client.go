@@ -252,3 +252,38 @@ func (c *APIClient) UpdateSecret(secretID int, secret Secret) error {
 
 	return nil
 }
+
+func (c *APIClient) DeleteSecret(secretID int) error {
+	req, err := http.NewRequest(
+		http.MethodDelete,
+		fmt.Sprintf("%s/api/secret/%d", c.BaseURL, secretID),
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// передаём JWT в cookie
+	req.AddCookie(&http.Cookie{
+		Name:  "jwt",
+		Value: c.Token,
+	})
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send DELETE request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	switch resp.StatusCode {
+	case http.StatusNoContent:
+		return nil
+	case http.StatusForbidden:
+		return fmt.Errorf("access denied")
+	case http.StatusNotFound:
+		return fmt.Errorf("secret not found")
+	default:
+		return fmt.Errorf("delete secret failed: %s", resp.Status)
+	}
+}

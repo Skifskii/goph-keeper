@@ -101,7 +101,7 @@ func (s *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 			s.SelectedID = selected[0]
 			s.Done = true
 
-		case "q", "esc":
+		case "esc":
 			s.Done = true
 		}
 	}

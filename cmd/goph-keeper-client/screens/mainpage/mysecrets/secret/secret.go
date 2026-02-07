@@ -23,6 +23,7 @@ type Screen struct {
 	err        string
 	Done       bool
 	Edit       bool
+	Deleted    bool
 }
 
 func NewScreen(apiClient *api.APIClient) *Screen {
@@ -40,6 +41,7 @@ func (s *Screen) SetSecretID(secretID int) tea.Cmd {
 	s.err = ""
 	s.Done = false
 	s.Edit = false
+	s.Deleted = false
 
 	return s.loadSecret(secretID)
 }
@@ -81,6 +83,17 @@ func (s *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 			s.Done = true
 			return s, nil
 
+		case "d":
+			err := s.apiClient.DeleteSecret(s.SecretID)
+			if err != nil {
+				s.err = err.Error()
+				return s, nil
+			} else {
+				s.Deleted = true
+			}
+
+			return s, nil
+
 		case "esc":
 			s.Done = true
 		}
@@ -95,6 +108,14 @@ func (s Screen) View() string {
 	// title
 	b.WriteString(screens.LabelStyle.Render(fmt.Sprintf("    goph-keeper / main page / my secrets / secret '%d'", s.SecretID)))
 	b.WriteString("\n\n\n")
+
+	if s.Deleted {
+		b.WriteString("DELETED")
+		b.WriteString("\n\n\n")
+
+		b.WriteString(screens.HelpStyle.Render("    Use 'Esc' to exit"))
+		return b.String()
+	}
 
 	// info
 	b.WriteString(fmt.Sprintf("type: %s", s.secretType))
@@ -112,7 +133,7 @@ func (s Screen) View() string {
 
 	b.WriteString("\n\n\n")
 
-	b.WriteString(screens.HelpStyle.Render("    Use 'e' to edit, 'Esc to exit"))
+	b.WriteString(screens.HelpStyle.Render("    Use 'e' to edit, 'd' to delete, 'Esc' to exit"))
 	b.WriteString("\n")
 
 	return b.String()
