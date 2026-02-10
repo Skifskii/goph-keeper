@@ -11,10 +11,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// Name is the canonical identifier for the mysecrets screen.
 var Name = "mysecrets"
 
-// Screen implements the TUI list view for a user's secrets.
 type Screen struct {
 	api        *api.APIClient
 	table      table.Model
@@ -22,9 +20,12 @@ type Screen struct {
 	err        string
 	SelectedID string
 	Done       bool
+
+	limit   int
+	offset  int
+	hasMore bool
 }
 
-// NewScreen constructs a mysecrets Screen backed by the provided API client.
 func NewScreen(apiClient *api.APIClient) *Screen {
 	columns := []table.Column{
 		{Title: "ID", Width: 10},
@@ -54,28 +55,36 @@ func NewScreen(apiClient *api.APIClient) *Screen {
 	}
 }
 
-// Init prepares the screen and begins loading secrets.
 func (s *Screen) Init() tea.Cmd {
 	s.SelectedID = ""
 	s.Done = false
 	s.loading = true
-	return s.loadSecrets()
+	s.err = ""
+
+	s.limit = 10
+	s.offset = 0
+	s.hasMore = true
+
+	s.table.SetRows(nil)
+	s.table.SetCursor(0)
+
+	return s.loadSecrets(s.offset)
 }
 
-type secretsLoadedMsg []api.SecretMeta
+type secretsLoadedMsg struct {
+	secrets []api.SecretMeta
+}
 
-func (s *Screen) loadSecrets() tea.Cmd {
+func (s *Screen) loadSecrets(offset int) tea.Cmd {
 	return func() tea.Msg {
-		secrets, err := s.api.ListSecrets(50, 0)
+		secrets, err := s.api.ListSecrets(s.limit, offset)
 		if err != nil {
 			return err
 		}
-		return secretsLoadedMsg(secrets)
+		return secretsLoadedMsg{secrets: secrets}
 	}
 }
 
-// Update handles incoming messages, updates table rows and selection
-// state and returns any command to run.
 func (s *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 	var cmd tea.Cmd
 
@@ -84,15 +93,21 @@ func (s *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 	case secretsLoadedMsg:
 		s.loading = false
 
-		rows := make([]table.Row, 0, len(msg))
-		for _, secret := range msg {
+		if len(msg.secrets) < s.limit {
+			s.hasMore = false
+		}
+
+		rows := s.table.Rows()
+		for _, secret := range msg.secrets {
 			rows = append(rows, table.Row{
 				strconv.Itoa(secret.ID),
 				secret.SecretType,
 				secret.Metadata,
 			})
 		}
+
 		s.table.SetRows(rows)
+		s.offset += len(msg.secrets)
 
 	case error:
 		s.loading = false
@@ -112,13 +127,23 @@ func (s *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 		}
 	}
 
+	prevCursor := s.table.Cursor()
 	s.table, cmd = s.table.Update(msg)
+
+	if s.hasMore &&
+		!s.loading &&
+		s.table.Cursor() == len(s.table.Rows())-1 &&
+		s.table.Cursor() != prevCursor {
+
+		s.loading = true
+		return s, s.loadSecrets(s.offset)
+	}
+
 	return s, cmd
 }
 
-// View renders the current list or loading/error state for display.
 func (s Screen) View() string {
-	if s.loading {
+	if s.loading && s.offset == 0 {
 		return "\n  loading secrets...\n"
 	}
 
@@ -126,10 +151,17 @@ func (s Screen) View() string {
 		return screens.ErrorStyle.Render(s.err)
 	}
 
-	return lipgloss.NewStyle().
+	view := lipgloss.NewStyle().
 		BorderStyle(lipgloss.NormalBorder()).
 		BorderForeground(lipgloss.Color("240")).
-		Render(s.table.View()) +
-		"\n\n" +
+		Render(s.table.View())
+
+	if s.loading && s.hasMore {
+		view += "\n  loading more..."
+	}
+
+	view += "\n\n" +
 		screens.HelpStyle.Render("    Use '↑', '↓' and 'Enter' to navigate, 'q' to exit")
+
+	return view
 }
