@@ -27,6 +27,8 @@ func NewScreen() *Screen {
 		options: []string{
 			newcred_screen.Name,
 			newtext_screen.Name,
+			"binary",
+			"card",
 		},
 	}
 }
@@ -65,7 +67,7 @@ func (m *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
 			m.Done = true
 			return m, nil
 
-		case "q":
+		case "esc":
 			m.Done = true
 			m.Quit = true
 			return m, nil
@@ -88,9 +90,13 @@ func (m Screen) View() string {
 	b.WriteString(m.buildRow("credential", 0))
 	b.WriteString("\n")
 	b.WriteString(m.buildRow("text", 1))
+	b.WriteString("\n")
+	b.WriteString(m.buildRow("binary", 2))
+	b.WriteString("\n")
+	b.WriteString(m.buildRow("card", 3))
 	b.WriteString("\n\n\n")
 
-	b.WriteString(screens.HelpStyle.Render("    Use '↑', '↓' and 'Enter' to navigate, 'q' to exit"))
+	b.WriteString(screens.HelpStyle.Render("    Use '↑', '↓' and 'Enter' to navigate, 'Esc' to exit"))
 	b.WriteString("\n")
 
 	return b.String()

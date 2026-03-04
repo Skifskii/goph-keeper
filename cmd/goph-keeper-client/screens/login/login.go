@@ -138,7 +138,7 @@ func (l Screen) View() string {
 	var b strings.Builder
 
 	// title
-	b.WriteString(screens.LabelStyle.Render("    welcome to goph-keeper!"))
+	b.WriteString(screens.LabelStyle.Render("    welcome to goph-keeper! (v1.0)"))
 	b.WriteString("\n\n\n")
 
 	// login

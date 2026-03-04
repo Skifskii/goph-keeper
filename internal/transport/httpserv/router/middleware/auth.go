@@ -9,7 +9,7 @@ import (
 // Authenticator defines the behavior required by the authentication
 // middleware: validating a JWT and returning the associated user ID.
 type Authenticator interface {
-	AuthenticateWithJWT(jwtTokenString string) (userID int, err error)
+	AuthorizeWithJWT(jwtTokenString string) (userID int, err error)
 }
 
 // Auth returns a middleware that extracts a JWT from the request cookie,
@@ -27,7 +27,7 @@ func Auth(log *slog.Logger, authenticator Authenticator) func(http.Handler) http
 			}
 
 			// try to get userID
-			userID, err := authenticator.AuthenticateWithJWT(cookie.Value)
+			userID, err := authenticator.AuthorizeWithJWT(cookie.Value)
 			if err != nil {
 				log.Error("failed to authenticate with jwt", slog.Any("error", err))
 				http.Error(w, "authentication failed", http.StatusUnauthorized)

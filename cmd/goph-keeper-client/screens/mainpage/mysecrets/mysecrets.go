@@ -161,7 +161,7 @@ func (s Screen) View() string {
 	}
 
 	view += "\n\n" +
-		screens.HelpStyle.Render("    Use '↑', '↓' and 'Enter' to navigate, 'q' to exit")
+		screens.HelpStyle.Render("    Use '↑', '↓' and 'Enter' to navigate, 'Esc' to exit")
 
 	return view
 }

@@ -122,9 +122,9 @@ func (a *AuthService) buildJWTToken(userID int, duration time.Duration) (string,
 	return tokenString, nil
 }
 
-// AuthenticateWithJWT validates a JWT token string and returns the
+// AuthorizeWithJWT validates a JWT token string and returns the
 // associated user ID if the token is valid.
-func (a *AuthService) AuthenticateWithJWT(jwtTokenString string) (int, error) {
+func (a *AuthService) AuthorizeWithJWT(jwtTokenString string) (int, error) {
 	claims := Claims{}
 	token, err := jwt.ParseWithClaims(jwtTokenString, &claims,
 		func(t *jwt.Token) (any, error) {
