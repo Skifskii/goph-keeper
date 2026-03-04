@@ -1,0 +1,112 @@
+package newsecret_screen
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens"
+	newcred_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage/newsecret/newcred"
+	newtext_screen "github.com/Skifskii/goph-keeper/cmd/goph-keeper-client/screens/mainpage/newsecret/newtext"
+	tea "github.com/charmbracelet/bubbletea"
+)
+
+// Name is the canonical identifier for the newsecret screen.
+var Name = "newsecret"
+
+// Screen implements the TUI for selecting a new secret type to create.
+type Screen struct {
+	options    []string
+	focusIndex int
+	Done       bool
+	Quit       bool
+}
+
+// NewScreen constructs the newsecret Screen.
+func NewScreen() *Screen {
+	return &Screen{
+		options: []string{
+			newcred_screen.Name,
+			newtext_screen.Name,
+			"binary",
+			"card",
+		},
+	}
+}
+
+// Init initializes the newsecret Screen state.
+func (m *Screen) Init() tea.Cmd {
+	m.focusIndex = 0
+	m.Done = false
+	m.Quit = false
+	return nil
+}
+
+// NextScreen returns the identifier of the selected child screen.
+func (m Screen) NextScreen() string {
+	return m.options[m.focusIndex]
+}
+
+// Update handles input events for the newsecret Screen.
+func (m *Screen) Update(msg tea.Msg) (*Screen, tea.Cmd) {
+	switch msg := msg.(type) {
+
+	case tea.KeyMsg:
+		switch msg.String() {
+
+		case "up":
+			if m.focusIndex > 0 {
+				m.focusIndex--
+			}
+
+		case "down":
+			if m.focusIndex < len(m.options)-1 {
+				m.focusIndex++
+			}
+
+		case "enter":
+			m.Done = true
+			return m, nil
+
+		case "esc":
+			m.Done = true
+			m.Quit = true
+			return m, nil
+		}
+	}
+
+	return m, nil
+}
+
+func (m Screen) View() string {
+	var b strings.Builder
+
+	// title
+	b.WriteString(screens.LabelStyle.Render("    goph-keeper / main page / new secret"))
+	b.WriteString("\n\n\n")
+
+	// login
+	b.WriteString("    Chose a type of secret")
+	b.WriteString("\n")
+	b.WriteString(m.buildRow("credential", 0))
+	b.WriteString("\n")
+	b.WriteString(m.buildRow("text", 1))
+	b.WriteString("\n")
+	b.WriteString(m.buildRow("binary", 2))
+	b.WriteString("\n")
+	b.WriteString(m.buildRow("card", 3))
+	b.WriteString("\n\n\n")
+
+	b.WriteString(screens.HelpStyle.Render("    Use '↑', '↓' and 'Enter' to navigate, 'Esc' to exit"))
+	b.WriteString("\n")
+
+	return b.String()
+}
+
+func (m Screen) buildRow(option string, optionIndex int) string {
+	cursor := " "
+	if optionIndex == m.focusIndex {
+		cursor = ">"
+	}
+
+	return fmt.Sprintf("[%s] %s", cursor, option)
+}
